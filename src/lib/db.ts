@@ -11,6 +11,9 @@ export const sql =
     max: 5,
     idle_timeout: 20,
     transform: { undefined: null },
+    // Supabase's transaction pooler (port 6543) does not support prepared statements.
+    prepare: !/:6543\//.test(process.env.DATABASE_URL ?? ""),
+    ssl: /supabase\.(co|com)/.test(process.env.DATABASE_URL ?? "") ? "require" : undefined,
   });
 
 if (process.env.NODE_ENV !== "production") globalThis.__somedaySql = sql;

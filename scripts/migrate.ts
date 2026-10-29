@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import postgres from "postgres";
 
-const sql = postgres(process.env.DATABASE_URL!, { max: 1 });
+const sql = postgres(process.env.DATABASE_URL!, { max: 1, prepare: false, ssl: /supabase\.(co|com)/.test(process.env.DATABASE_URL ?? "") ? "require" : undefined });
 const dir = join(process.cwd(), "supabase", "migrations");
 
 async function main() {

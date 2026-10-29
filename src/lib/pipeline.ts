@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { embed, extract, transcribe } from "./ai";
 import { sql, type Item } from "./db";
 import { dhash, download, extractAudio, itemDir, keyframes, MEDIA_DIR, pageInfo, rel, toJpeg, ytDownload, ytMeta } from "./media";
+import { ensureLocal, syncItemDir } from "./storage";
 
 // Claim up to `limit` queued items and process them one at a time.
 export async function processQueued(limit = 3): Promise<string[]> {
@@ -37,7 +38,7 @@ export async function processItem(id: string) {
 
   // 1. Saved screenshot / photo
   if (media.original) {
-    const abs = join(MEDIA_DIR, media.original);
+    const abs = await ensureLocal(media.original).catch(() => join(MEDIA_DIR, media.original!));
     if (existsSync(abs)) {
       const jpg = await toJpeg(abs, join(dir, "image.jpg"));
       images.push(jpg);
@@ -99,6 +100,9 @@ export async function processItem(id: string) {
     media = ${sql.json(media as never)}, meta = ${sql.json(meta as never)},
     embedding = ${vec ? JSON.stringify(vec) : null}
     where id = ${id}`;
+
+  // 4. Mirror media to object storage when configured (no-op locally).
+  await syncItemDir(id);
 }
 
 async function pullImage(url: string, dir: string, images: string[], media: Item["media"]) {

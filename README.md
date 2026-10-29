@@ -107,10 +107,41 @@ Open the site in Safari, tap Share → **Add to Home Screen**. It installs as a 
 
 ## Deploying
 
-- **Database:** create a Supabase project, run `supabase/migrations/*.sql` (the migration is plain SQL, pgvector is preinstalled there), set `DATABASE_URL` to the pooler connection string.
-- **App:** Vercel or Fly.io. The pipeline shells out to `yt-dlp` and `ffmpeg`, so pick a host where you control the image (Fly.io, Railway, a small VPS) or run `npm run worker` on a home machine and deploy only the web app to Vercel with `INLINE_PROCESS=0`.
-- **Media:** `MEDIA_DIR` is a local folder. For hosted use, swap `src/lib/media.ts` writes for Supabase Storage (one function each for save and URL).
-- **Auth:** single user. Set `APP_PASSWORD` and the UI, media and actions require the login cookie. Capture endpoints stay token-authenticated for the Shortcut and Twilio. Leave it blank for local development.
+Target: Fly.io for the app (it needs ffmpeg and yt-dlp, so a container host), Supabase for Postgres and media. Everything below is in the repo; you create the two accounts.
+
+**1. Database (Supabase).** Create a project. In Project Settings → Database, copy the **Session pooler** connection string (port 5432) for migrations and the **Transaction pooler** string (port 6543) for the app; both work with this code. Then from your laptop:
+
+```bash
+DATABASE_URL='postgresql://postgres.xxxx:PASSWORD@aws-0-us-east-1.pooler.supabase.com:5432/postgres' npm run db:migrate
+```
+
+**2. Media bucket (Supabase).** Storage → New bucket → name `media`, **private**. Copy Project URL and the `service_role` key from Project Settings → API.
+
+**3. App (Fly.io).**
+
+```bash
+brew install flyctl && fly auth login
+fly apps create someday-stash            # or edit `app` in fly.toml to a name you like
+fly volumes create data --size 10 --region sjc
+fly secrets set \
+  DATABASE_URL='postgresql://postgres.xxxx:PASSWORD@aws-0-us-east-1.pooler.supabase.com:6543/postgres' \
+  CAPTURE_TOKEN="$(openssl rand -hex 24)" \
+  APP_PASSWORD='pick-something-long' \
+  MEDIA_BACKEND=supabase SUPABASE_URL='https://xxxx.supabase.co' SUPABASE_SERVICE_ROLE_KEY='eyJ...' \
+  MOCK_AI=0 ANTHROPIC_API_KEY='sk-ant-...' OPENAI_API_KEY='sk-...' VOYAGE_API_KEY='pa-...'
+fly deploy
+fly open
+```
+
+Migrations run on every boot. `/api/health` reports queue depth and whether AI is in mock mode. The volume holds media (and a local cache when the bucket is on); with `MEDIA_LOCAL_CACHE=0` files are deleted locally after upload and the volume can be small.
+
+**4. Point the phone at it.** `npm run shortcut -- https://someday-stash.fly.dev YOUR_CAPTURE_TOKEN` on an iCloud-signed Mac, AirDrop the file, and Add to Home Screen from Safari.
+
+**Costs** at personal scale: Fly shared-cpu-1x with 1 GB is a few dollars a month, Supabase free tier covers the database and bucket, AI is cents per save.
+
+**Twilio** (optional): point the number's messaging webhook at `https://your-app/api/capture` and add `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` to secrets.
+
+**CI** runs typecheck, build, a lockfile check and a Docker build on every push.
 
 ## Known limits
 

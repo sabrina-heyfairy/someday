@@ -2,6 +2,7 @@ import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { sql } from "./db";
 import { canonicalize, detectSource, dhash, itemDir, rel, resolveShortLink, sha256, toJpeg } from "./media";
+import { syncItemDir } from "./storage";
 import { join as pjoin } from "node:path";
 import { tmpdir } from "node:os";
 import { unlinkSync } from "node:fs";
@@ -80,6 +81,8 @@ async function saveOriginal(id: string, image: { buffer: Buffer; filename?: stri
   const p = join(itemDir(id), `original.${ext}`);
   writeFileSync(p, image.buffer);
   await sql`update items set media = media || ${sql.json({ original: rel(p) })} where id = ${id}`;
+  // Persist the original right away so a crash before processing can't lose it; keep the local copy for the pipeline.
+  await syncItemDir(id, { dropLocal: false }).catch((e) => console.error("storage sync failed", e));
 }
 
 async function hashImageBuffer(buf: Buffer, filename?: string): Promise<string | null> {

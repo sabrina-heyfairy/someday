@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+data
+dist
+.tools
+.env*
+*.log
+README.md

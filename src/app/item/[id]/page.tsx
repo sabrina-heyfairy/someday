@@ -1,0 +1,100 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { sql, type Item } from "@/lib/db";
+import { ItemCard } from "../../item-card";
+import { reprocess, saveNotes, toggleStar, archive } from "./actions";
+
+import { requireSession } from "@/lib/require-session";
+
+export const dynamic = "force-dynamic";
+
+export default async function ItemPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  await requireSession(`/item/${id}`);
+  const [item] = await sql<Item[]>`select * from items where id = ${id}`;
+  if (!item) notFound();
+  const similar = await sql<Item[]>`
+    select * from items where id <> ${id} and archived = false and status = 'done'
+      and (tags && ${item.tags} or garments && ${item.garments} or techniques && ${item.techniques})
+    order by (select count(*) from unnest(tags) t where t = any(${item.tags})) desc, created_at desc limit 8`;
+  const dups = await sql<Item[]>`select * from items where duplicate_of = ${id} order by created_at`;
+  const m = (p?: string) => (p ? `/api/media/${p}` : null);
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+      <div className="space-y-3">
+        {item.media.video ? <video src={m(item.media.video)!} poster={m(item.media.thumbnail) ?? undefined} controls className="w-full rounded-2xl card" /> :
+          m(item.media.thumbnail) ? <img src={m(item.media.thumbnail)!} alt="" className="w-full rounded-2xl card" /> : null}
+        {item.media.frames && item.media.frames.length > 1 && (
+          <div className="flex gap-1.5 overflow-x-auto">{item.media.frames.map((f) => <img key={f} src={m(f)!} alt="" className="h-16 rounded-md" />)}</div>
+        )}
+        {item.url && <a href={item.url} target="_blank" rel="noreferrer" className="block text-sm underline break-all" style={{ color: "var(--accent)" }}>Open original on {item.source} ↗</a>}
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="flex-1">
+            <div className="text-xs muted">{item.source} · {item.category ?? "unsorted"} · {item.action ?? ""} {item.creator && <>· by {item.creator}</>}</div>
+            <h1 className="text-xl font-semibold leading-tight mt-1">{item.title ?? "Untitled"}</h1>
+          </div>
+          <form action={toggleStar}><input type="hidden" name="id" value={id} /><button className="text-xl" title="Star">{item.starred ? "★" : "☆"}</button></form>
+        </div>
+        {item.summary && <p className="text-[15px]">{item.summary}</p>}
+        {item.status !== "done" && (
+          <div className="card rounded-xl p-3 text-sm">
+            Status: <b>{item.status}</b>{item.error && <div className="mt-1 text-xs break-all" style={{ color: "var(--accent)" }}>{item.error}</div>}
+            <form action={reprocess} className="mt-2"><input type="hidden" name="id" value={id} /><button className="chip">Retry now</button></form>
+          </div>
+        )}
+
+        <Facts label="Tags" items={item.tags} q="tag" />
+        <Facts label="Garments" items={item.garments} />
+        <Facts label="Techniques" items={item.techniques} />
+        <Facts label="Fabrics" items={item.fabrics} />
+        <Facts label="Colors" items={item.colors} />
+        {item.patterns.length > 0 && <Block label="Patterns"><ul className="text-sm list-disc pl-5">{item.patterns.map((p, i) => <li key={i}>{[p.brand, p.name, p.number].filter(Boolean).join(" ")}</li>)}</ul></Block>}
+        {item.products.length > 0 && <Block label="Products"><ul className="text-sm list-disc pl-5">{item.products.map((p, i) => <li key={i}>{[p.brand, p.name, p.price].filter(Boolean).join(" · ")} {p.url && <a href={p.url} className="underline" target="_blank" rel="noreferrer">link</a>}</li>)}</ul></Block>}
+        {item.steps.length > 0 && <Block label="Steps"><ol className="text-sm list-decimal pl-5 space-y-1">{item.steps.map((s, i) => <li key={i}>{s}</li>)}</ol></Block>}
+
+        <form action={saveNotes} className="space-y-1">
+          <input type="hidden" name="id" value={id} />
+          <label className="text-xs uppercase tracking-wide muted">My notes</label>
+          <textarea name="notes" defaultValue={item.notes ?? ""} rows={2} className="card w-full rounded-xl p-2 text-sm" placeholder="Why did I save this? Size, fabric I have, etc." />
+          <button className="chip">Save notes</button>
+        </form>
+
+        {item.raw_text && <Block label="Shared text / caption"><p className="text-sm whitespace-pre-wrap muted">{item.raw_text}</p></Block>}
+        {item.ocr_text && <Block label="On-screen text"><p className="text-sm whitespace-pre-wrap muted">{item.ocr_text}</p></Block>}
+        {item.transcript && <details><summary className="text-xs uppercase tracking-wide muted cursor-pointer">Transcript</summary><p className="text-sm whitespace-pre-wrap mt-2 muted">{item.transcript}</p></details>}
+
+        {dups.length > 0 && (
+          <Block label={`Saved ${dups.length + 1} times`}>
+            <div className="flex gap-1.5 overflow-x-auto">{dups.map((d) => d.media.original && <img key={d.id} src={m(d.media.original)!} alt="" className="h-16 rounded-md" title={`${d.channel} · ${new Date(d.created_at).toLocaleDateString()}`} />)}</div>
+          </Block>
+        )}
+
+        <div className="flex gap-3 text-xs muted pt-2">
+          <span>saved {new Date(item.created_at).toLocaleString()}</span>
+          <form action={reprocess}><input type="hidden" name="id" value={id} /><button className="underline">re-run AI</button></form>
+          <form action={archive}><input type="hidden" name="id" value={id} /><button className="underline">archive</button></form>
+          <Link href="/" className="ml-auto underline">← back</Link>
+        </div>
+      </div>
+
+      {similar.length > 0 && (
+        <div className="lg:col-span-2 pt-4">
+          <h2 className="text-sm uppercase tracking-wide muted mb-2">Similar saves</h2>
+          <div className="columns-2 sm:columns-4 gap-3 [&>*]:mb-3">{similar.map((s) => <ItemCard key={s.id} item={s} />)}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Block({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div><div className="text-xs uppercase tracking-wide muted mb-1">{label}</div>{children}</div>;
+}
+function Facts({ label, items, q }: { label: string; items: string[]; q?: string }) {
+  if (!items?.length) return null;
+  return <Block label={label}><div className="flex flex-wrap gap-1">{items.map((t) => q ? <Link key={t} href={`/?${q}=${encodeURIComponent(t)}`} className="chip">{t}</Link> : <span key={t} className="chip">{t}</span>)}</div></Block>;
+}

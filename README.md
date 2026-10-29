@@ -85,6 +85,10 @@ Cost check: a thousand screenshots through Haiku 5.5 with one image each is roug
 
 **4. Desktop.** The `/add` page, or `npm run ingest:url -- <url>`. On Android and desktop Chrome the installed app also registers as a share target, so "Share → Someday" lands on `/add` prefilled.
 
+## The to-make board
+
+`/make` is a four-column board: Want to make, Fabric bought, In progress, Done. Anything the AI tags with action "make" appears in the first column automatically; add anything else from its item page. Tap the arrows on a card to move it, × to take it off the board. Each card shows how long it has sat in its column. This is the "I saved it and never did anything" fix.
+
 ## On your phone
 
 Open the site in Safari, tap Share → **Add to Home Screen**. It installs as a full-screen app with its own icon. Set `APP_PASSWORD` before exposing the site; you log in once and the cookie lasts a year. The Shortcut and the SMS webhook use the capture token, not the password, so they keep working.
@@ -155,4 +159,4 @@ Migrations run on every boot. `/api/health` reports queue depth and whether AI i
 2. Run the Photos backfill.
 3. "Ask" mode: natural-language questions answered across all saves.
 4. Weekly digest ("you saved 4 bias-tape tutorials, here's the one you haven't watched").
-5. Collections, a "to make" board, weekly digest, native share extension if the Shortcut feels slow.
+5. Collections, weekly digest, native share extension if the Shortcut feels slow.

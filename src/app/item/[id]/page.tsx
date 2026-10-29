@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { sql, type Item } from "@/lib/db";
 import { ItemCard } from "../../item-card";
 import { reprocess, saveNotes, toggleStar, archive } from "./actions";
+import { setStage } from "../../make/actions";
+import { STAGES } from "@/lib/stages";
 
 import { requireSession } from "@/lib/require-session";
 
@@ -46,6 +48,18 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
             <form action={reprocess} className="mt-2"><input type="hidden" name="id" value={id} /><button className="chip">Retry now</button></form>
           </div>
         )}
+
+        <Block label="To-make board">
+          <div className="flex flex-wrap gap-1">
+            {STAGES.map((s) => (
+              <form key={s.key} action={setStage}>
+                <input type="hidden" name="id" value={id} /><input type="hidden" name="stage" value={s.key} />
+                <button className={`chip ${(item.stage ?? (item.action === "make" ? "want" : null)) === s.key ? "on" : ""}`}>{s.label}</button>
+              </form>
+            ))}
+            {item.stage && <form action={setStage}><input type="hidden" name="id" value={id} /><input type="hidden" name="stage" value="" /><button className="chip muted">remove</button></form>}
+          </div>
+        </Block>
 
         <Facts label="Tags" items={item.tags} q="tag" />
         <Facts label="Garments" items={item.garments} />

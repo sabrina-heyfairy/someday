@@ -22,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="mx-auto max-w-6xl px-4 h-12 flex items-center justify-between" style={{ paddingTop: "env(safe-area-inset-top)" }}>
             <Link href="/" className="font-semibold tracking-tight">Someday</Link>
             <nav className="flex gap-4 text-sm muted">
+              <Link href="/make">To make</Link>
               <Link href="/?status=queued">Queue</Link>
               <Link href="/add">Add</Link>
             </nav>

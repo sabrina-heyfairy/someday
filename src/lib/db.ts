@@ -52,6 +52,8 @@ export type Item = {
   archived: boolean;
   phash: string | null;
   duplicate_of: string | null;
+  stage: "want" | "fabric" | "in_progress" | "done" | null;
+  stage_changed_at: string | null;
 };
 
 export const CATEGORIES = ["garment", "pattern", "technique", "tutorial", "fabric", "product", "inspiration", "other"] as const;

@@ -44,7 +44,15 @@ npm run dev                       # http://localhost:3000
 
 ## Ways to save
 
-**1. iPhone Share Sheet (the main one).** Build this once in the Shortcuts app:
+**1. iPhone Share Sheet (the main one).** Easiest: generate and sign the shortcut, then AirDrop it to your phone.
+
+```bash
+npm run shortcut -- https://YOUR-HOST YOUR_CAPTURE_TOKEN
+```
+
+That writes `Save to Someday.shortcut`, signed so iOS accepts it. Signing needs a Mac that is signed into iCloud (no developer account). It pulls links and images out of whatever you share, sends them as JSON to `/api/capture`, and pops a "Saved ✨" notification. Open the file on the Mac or AirDrop it; iOS shows an Add Shortcut screen.
+
+Or build it by hand in the Shortcuts app:
 
 1. New Shortcut. Tap the (i) and turn on **Show in Share Sheet**. Accept: URLs, Images, Text, Safari web pages.
 2. Add action **Get Contents of URL**
@@ -75,7 +83,11 @@ Manual alternative: export from Photos yourself (Media Types → Screenshots →
 
 Cost check: a thousand screenshots through Haiku 5.5 with one image each is roughly a dollar or two.
 
-**4. Desktop.** The `/add` page, or `npm run ingest:url -- <url>`.
+**4. Desktop.** The `/add` page, or `npm run ingest:url -- <url>`. On Android and desktop Chrome the installed app also registers as a share target, so "Share → Someday" lands on `/add` prefilled.
+
+## On your phone
+
+Open the site in Safari, tap Share → **Add to Home Screen**. It installs as a full-screen app with its own icon. Set `APP_PASSWORD` before exposing the site; you log in once and the cookie lasts a year. The Shortcut and the SMS webhook use the capture token, not the password, so they keep working.
 
 ## Scripts
 
@@ -89,6 +101,7 @@ Cost check: a thousand screenshots through Haiku 5.5 with one image each is roug
 | `npm run rehash` | Compute perceptual hashes for items that predate dedupe |
 | `npm run hash:compare -- <dir>` | Print hash distances vs `orig.*` in a folder, for tuning `NEAR_DUP_THRESHOLD` |
 | `npm run ingest:url -- <url> [note]` | Save one link from the terminal |
+| `npm run shortcut -- <host> <token>` | Build and sign the Save to Someday iOS Shortcut |
 | `POST /api/process?token=…&limit=5` | Cron-friendly processing endpoint |
 | `GET /api/items?token=…&q=…` | JSON search, for a future native app or Shortcut |
 
@@ -97,7 +110,7 @@ Cost check: a thousand screenshots through Haiku 5.5 with one image each is roug
 - **Database:** create a Supabase project, run `supabase/migrations/*.sql` (the migration is plain SQL, pgvector is preinstalled there), set `DATABASE_URL` to the pooler connection string.
 - **App:** Vercel or Fly.io. The pipeline shells out to `yt-dlp` and `ffmpeg`, so pick a host where you control the image (Fly.io, Railway, a small VPS) or run `npm run worker` on a home machine and deploy only the web app to Vercel with `INLINE_PROCESS=0`.
 - **Media:** `MEDIA_DIR` is a local folder. For hosted use, swap `src/lib/media.ts` writes for Supabase Storage (one function each for save and URL).
-- **Auth:** single user. The UI has no login yet; put it behind Vercel password protection, Cloudflare Access, or add Supabase Auth.
+- **Auth:** single user. Set `APP_PASSWORD` and the UI, media and actions require the login cookie. Capture endpoints stay token-authenticated for the Shortcut and Twilio. Leave it blank for local development.
 
 ## Known limits
 
@@ -111,4 +124,4 @@ Cost check: a thousand screenshots through Haiku 5.5 with one image each is roug
 2. Run the Photos backfill.
 3. "Ask" mode: natural-language questions answered across all saves.
 4. Weekly digest ("you saved 4 bias-tape tutorials, here's the one you haven't watched").
-5. Native share extension if the Shortcut feels slow.
+5. Collections, a "to make" board, weekly digest, native share extension if the Shortcut feels slow.

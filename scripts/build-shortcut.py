@@ -5,7 +5,7 @@
 
 Produces a signed .shortcut you can AirDrop to your iPhone (or open on the Mac). The shortcut appears in the
 Share Sheet for links, web pages, images and text, POSTs them to /api/capture as a multipart form, and shows a
-notification with the result. Signing uses the macOS `shortcuts` CLI (macOS 12+); no Apple developer account needed.
+notification with the result. Signing uses the macOS `shortcuts` CLI (macOS 12+) and needs the Mac to be signed into iCloud; no developer account needed.
 """
 import plistlib, subprocess, sys, uuid, os, tempfile
 
@@ -30,7 +30,7 @@ def form_item(key, value, item_type=0):
 
 def build(host, token):
     host = host.rstrip("/")
-    urls_uuid, imgs_uuid, resp_uuid = str(uuid.uuid4()).upper(), str(uuid.uuid4()).upper(), str(uuid.uuid4()).upper()
+    urls_uuid, imgs_uuid, b64_uuid, resp_uuid = (str(uuid.uuid4()).upper() for _ in range(4))
     actions = [
         # 1. Pull any links out of whatever was shared (URL, web page, text). Empty for images.
         {"WFWorkflowActionIdentifier": "is.workflow.actions.detect.link",
@@ -38,22 +38,26 @@ def build(host, token):
         # 2. Pull any images out (screenshots, photos). Empty for links.
         {"WFWorkflowActionIdentifier": "is.workflow.actions.detect.images",
          "WFWorkflowActionParameters": {"WFInput": ext_input_attach(), "UUID": imgs_uuid, "CustomOutputName": "Images"}},
-        # 3. POST everything as one multipart form. Empty fields are fine; the server ignores them.
+        # 3. Base64 the image (empty string when there is none) so everything travels as one JSON body.
+        {"WFWorkflowActionIdentifier": "is.workflow.actions.base64encode",
+         "WFWorkflowActionParameters": {"WFInput": var_attach("Images", imgs_uuid), "WFEncodeMode": "Encode", "WFBase64LineBreakMode": "None", "UUID": b64_uuid, "CustomOutputName": "ImageBase64"}},
+        # 4. POST as JSON. Empty fields are ignored server-side.
         {"WFWorkflowActionIdentifier": "is.workflow.actions.downloadurl",
          "WFWorkflowActionParameters": {
              "WFURL": text(f"{host}/api/capture"),
              "WFHTTPMethod": "POST",
              "ShowHeaders": True,
              "WFHTTPHeaders": {"Value": {"WFDictionaryFieldValueItems": [form_item("Authorization", text(f"Bearer {token}"))]}, "WFSerializationType": "WFDictionaryFieldValue"},
-             "WFHTTPBodyType": "Form",
-             "WFFormValues": {"Value": {"WFDictionaryFieldValueItems": [
+             "WFHTTPBodyType": "JSON",
+             "WFJSONValues": {"Value": {"WFDictionaryFieldValueItems": [
                  form_item("url", var_text("URLs", urls_uuid)),
                  form_item("text", ext_input_text()),
-                 form_item("image", var_attach("Images", imgs_uuid), item_type=5),
+                 form_item("image_base64", var_text("ImageBase64", b64_uuid)),
+                 form_item("filename", text("shared.jpg")),
                  form_item("channel", text("shortcut")),
              ]}, "WFSerializationType": "WFDictionaryFieldValue"},
              "UUID": resp_uuid, "CustomOutputName": "Response"}},
-        # 4. Tell the user.
+        # 5. Tell the user.
         {"WFWorkflowActionIdentifier": "is.workflow.actions.notification",
          "WFWorkflowActionParameters": {"WFNotificationActionTitle": "Someday", "WFNotificationActionBody": text("Saved ✨"), "WFNotificationActionSound": False}},
     ]
@@ -81,7 +85,12 @@ def main():
             plistlib.dump(build(host, token), f, fmt=plistlib.FMT_BINARY)
         r = subprocess.run(["shortcuts", "sign", "--mode", "anyone", "--input", unsigned, "--output", out], capture_output=True, text=True)
         if r.returncode != 0:
-            print("signing failed:", r.stderr.strip() or r.stdout.strip()); sys.exit(r.returncode)
+            msg = (r.stderr.strip() or r.stdout.strip())
+            if "signed into iCloud" in msg:
+                print("Signing needs a Mac that is signed into iCloud (System Settings > Apple Account). Run this script there; the shortcut file itself is fine.")
+            else:
+                print("signing failed:", msg[-500:])
+            sys.exit(r.returncode)
     print(f"wrote {out}  (host {host}). AirDrop it to your iPhone, or double-click on the Mac to add it.")
 
 if __name__ == "__main__":

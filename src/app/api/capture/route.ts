@@ -52,8 +52,13 @@ export async function POST(req: Request) {
     for (const f of extra) intake({ image: { buffer: Buffer.from(await f.arrayBuffer()), filename: f.name }, channel: c.channel }).catch(() => {});
   } else {
     const j = await req.json().catch(() => ({}));
-    const image = j.image_base64 ? { buffer: Buffer.from(String(j.image_base64).replace(/^data:[^,]+,/, ""), "base64"), filename: j.filename } : null;
-    c = { url: j.url, text: j.text, image, channel: j.channel || "shortcut", meta: j.meta };
+    const b64 = typeof j.image_base64 === "string" ? j.image_base64.replace(/^data:[^,]+,/, "").trim() : "";
+    const image = b64.length > 100 ? { buffer: Buffer.from(b64, "base64"), filename: j.filename || "shared.jpg" } : null;
+    const url = typeof j.url === "string" && j.url.trim() ? j.url.trim().split(/\s+/)[0] : null;
+    let text = typeof j.text === "string" && j.text.trim() ? j.text.trim() : null;
+    if (text && url && text === url) text = null;
+    if (text && image && /^(IMG_\d+|shared)\.(jpe?g|png|heic)$/i.test(text)) text = null;
+    c = { url, text, image, channel: j.channel || "shortcut", meta: j.meta };
   }
 
   if (!c.url && !c.text && !c.image) return NextResponse.json({ error: "nothing to save" }, { status: 400 });

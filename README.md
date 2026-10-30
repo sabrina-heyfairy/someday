@@ -138,6 +138,8 @@ brew install flyctl && fly auth login     # once, needs a Fly account with a car
 npm run deploy                             # creates app, 10 GB volume, Fly Postgres, secrets, deploys, health-checks
 ```
 
+Notes from the first deploy: Fly's unmanaged Postgres images (17 and 18) do not include pgvector, so the schema treats it as optional and semantic search is off on Fly unless you install `postgresql-17-pgvector` on the database machine or move the database to a host that has it. Fly Postgres machines are created with the proxy's idle auto-stop, which stops the database five minutes after each start; the deploy script turns that off. `fly postgres attach` and `fly ssh` need a WireGuard tunnel that some corporate networks block; `fly deploy` (Depot builder) and `fly machine exec` do not.
+
 `npm run deploy` is safe to re-run; it only creates what is missing. It reads `ANTHROPIC_API_KEY` (and optional `OPENAI_API_KEY`, `VOYAGE_API_KEY`, `APP_PASSWORD`) from `.env.local`, generates a capture token and a web password if you did not set one (written to `.deploy-password.txt`, gitignored), and prints the live URL. Migrations run on every boot. `/api/health` reports queue depth and whether AI is in mock mode.
 
 Then `npm run shortcut -- https://YOUR-APP.fly.dev YOUR_CAPTURE_TOKEN` on an iCloud-signed Mac, AirDrop the file, and Add to Home Screen from Safari.

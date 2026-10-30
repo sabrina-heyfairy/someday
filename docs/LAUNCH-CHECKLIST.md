@@ -15,7 +15,10 @@ Tip: the office proxy blocks personal Anthropic keys from this laptop, so test r
   ```
   A browser window opens; approve it. Done when the terminal says "successfully logged in".
 
-## 2. Deploy (Claude, or you)
+## 2. Deploy (done 2026-10-30)
+Live at https://someday-stash.fly.dev. Web password is in `.deploy-password.txt`, capture token in `.deploy-token.txt` (both gitignored, on this Mac only). Database is the Fly Postgres app `someday-stash-pg` (PG 17). Two leftovers to delete when convenient: `someday-guhxxa` (an earlier `fly launch` in Amsterdam) and `someday-stash-db` (PG 18, no pgvector). `fly apps destroy <name>`.
+
+## 2b. Deploy from scratch (if ever needed)
 - [ ] Make sure `ANTHROPIC_API_KEY` is in `~/Documents/someday/.env.local` (it is).
 - [ ] Run:
   ```bash
@@ -23,10 +26,9 @@ Tip: the office proxy blocks personal Anthropic keys from this laptop, so test r
   ```
   Creates the app, disk and database, sets secrets, builds and deploys (3 to 5 minutes the first time), then prints the URL, health status and your capture token. The web password is in `.deploy-password.txt`.
 
-## 3. Prove it works
-- [ ] Open `https://someday-stash.fly.dev/api/health` (your app name may differ). Expect `"ok":true` and `"mock_ai":false`.
-- [ ] In the app, tap **Add**, paste a YouTube sewing video link, Save. Within a minute the item page shows a real title, tags and summary (not `[mock]`).
-- [ ] Grid footer shows AI spend > $0.00.
+## 3. Prove it works (done 2026-10-30)
+- [x] `/api/health` returns `"ok":true,"mock_ai":false`.
+- [x] A YouTube tutorial saved through the live app came back with a real title, 8 tags and a summary naming the creator.
 
 ## 4. Phone: Shortcut + home screen
 - [ ] On a Mac signed into iCloud (personal Mac, or sign this one in):

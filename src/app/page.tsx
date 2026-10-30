@@ -17,7 +17,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
   const unshelved = sp.shelf === "none";
   const [items, f, ai, collections, topics] = await Promise.all([
     searchItems({ q: sp.q, shelf: unshelved ? undefined : sp.shelf, unshelved, source: sp.source, tag: sp.tag, status: sp.status, action: sp.action, starred: sp.starred === "1" }),
-    facets(),
+    facets({ shelf: unshelved ? undefined : sp.shelf, unshelved }),
     spend(),
     sql<{ id: string; name: string }[]>`select id, name from collections where is_shelf order by position, name`,
     unshelved ? sql<{ topic: string; n: number }[]>`select coalesce(topic, 'other') topic, count(*)::int n from items i where archived = false and duplicate_of is null

@@ -48,14 +48,18 @@ export async function spend() {
 
 export type Shelf = { id: string; name: string; position: number; n: number };
 
-export async function facets() {
+export async function facets(scope: { shelf?: string; unshelved?: boolean } = {}) {
   const live = sql`archived = false and duplicate_of is null`;
+  const shelf = scope.shelf && UUID.test(scope.shelf) ? scope.shelf : undefined;
+  // Tags are counted within the current shelf so the drawer shows what matters here, not the whole archive.
+  const tagScope = shelf ? sql`and exists (select 1 from collection_items ci where ci.item_id = items.id and ci.collection_id = ${shelf})`
+    : scope.unshelved ? sql`and not exists (select 1 from collection_items ci join collections c on c.id = ci.collection_id where ci.item_id = items.id and c.is_shelf)` : sql``;
   const [shelves, unshelved, srcs, tags, counts] = await Promise.all([
     sql<Shelf[]>`select c.id, c.name, c.position, (select count(*)::int from collection_items ci join items i on i.id = ci.item_id where ci.collection_id = c.id and i.archived = false and i.duplicate_of is null) n
                  from collections c where c.is_shelf order by c.position, c.name`,
     sql<{ n: number }[]>`select count(*)::int n from items where ${live} and not exists (select 1 from collection_items ci join collections c on c.id = ci.collection_id where ci.item_id = items.id and c.is_shelf)`,
     sql<{ source: string; n: number }[]>`select source, count(*)::int n from items where ${live} group by 1 order by 2 desc`,
-    sql<{ tag: string; n: number }[]>`select t tag, count(*)::int n from items, unnest(tags) t where ${live} and t not in ('sewing-tip','has-howto','link-only','note-only') group by 1 order by 2 desc limit 24`,
+    sql<{ tag: string; n: number }[]>`select t tag, count(*)::int n from items, unnest(tags) t where ${live} ${tagScope} and t not in ('sewing-tip','has-howto','link-only','note-only') group by 1 order by 2 desc limit 30`,
     sql<{ status: string; n: number }[]>`select status, count(*)::int n from items where ${live} group by 1`,
   ]);
   return { shelves, unshelved: unshelved[0]?.n ?? 0, srcs, tags, counts };

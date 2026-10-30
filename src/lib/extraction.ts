@@ -29,7 +29,7 @@ export const EXTRACTION_JSON_SHAPE = `{
   "shelf": "the single best match from the user's shelf list given in the message, copied exactly, or null if none fits",
   "category": "what kind of thing: 'product' (something for sale), 'inspiration' (a look, room, mood, idea), 'howto' (teaches something), 'pattern', 'recipe', 'place', 'article', 'other'",
   "action": "buy | make | learn | inspo | reference  (buy = a product to consider buying; make = a project to make or cook; learn = a how-to; inspo = a look or idea; reference = facts to keep)",
-  "tags": ["3-8 lowercase tags, specific and searchable (e.g. 'wide-leg pants', 'green linen', 'one-pot', 'reading nook')"],
+  "tags": ["4-10 lowercase tags. FIRST any of the standard tags that apply, copied exactly from the list in the message (occasion like 'christmas', purpose like 'gift idea', theme like 'color inspiration'). THEN specific searchable descriptors (e.g. 'wide-leg pants', 'green linen', 'one-pot', 'reading nook')"],
   "garments": ["ONLY if clothing is shown or discussed: garment types, lowercase, e.g. 'wrap dress', 'trench coat'"],
   "techniques": ["ONLY for sewing/craft how-tos: techniques shown or taught"],
   "fabrics": ["ONLY if fabric or material is named or clearly visible"],
@@ -40,3 +40,14 @@ export const EXTRACTION_JSON_SHAPE = `{
   "creator": "handle or name of the creator, or null",
   "ocr_text": "all legible on-screen / in-image text, or null"
 }`;
+
+// Tags the model is told to use verbatim whenever they apply, so filtering by them is consistent.
+// Specific descriptive tags are added on top of these.
+export const STANDARD_TAGS = [
+  // occasions and seasons
+  "christmas", "halloween", "thanksgiving", "easter", "valentines", "birthday", "wedding", "baby shower", "back to school", "summer", "fall", "winter", "spring",
+  // purpose
+  "gift idea", "for kids", "for baby", "for home", "for me", "for the dog", "party", "travel", "quick project", "beginner", "weekend project", "budget", "splurge",
+  // theme
+  "color inspiration", "outfit idea", "capsule wardrobe", "room idea", "table setting", "diy decor", "upcycle", "organization", "recipe", "meal prep", "cozy", "minimal", "vintage", "cottagecore",
+] as const;

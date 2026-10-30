@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { readFileSync } from "node:fs";
-import { Extraction, EXTRACTION_JSON_SHAPE } from "./extraction";
+import { Extraction, EXTRACTION_JSON_SHAPE, STANDARD_TAGS } from "./extraction";
 
 import { sql } from "./db";
 
@@ -63,6 +63,7 @@ export async function extract(input: ExtractInput): Promise<Extraction> {
     input.transcript && `Audio transcript:\n${input.transcript.slice(0, 8000)}`,
     `${input.imagePaths.length} image(s) attached (video keyframes in order, or the saved screenshot).`,
     input.shelves?.length ? `The user's shelves (pick one for "shelf", copied exactly, or null): ${input.shelves.join(" | ")}` : null,
+    `Standard tags (use any that apply, copied exactly, then add specific ones): ${STANDARD_TAGS.join(", ")}`,
   ].filter(Boolean).join("\n\n");
   content.push({ type: "text", text: parts });
 

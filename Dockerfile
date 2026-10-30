@@ -26,5 +26,5 @@ COPY supabase ./supabase
 ENV MEDIA_DIR=/data/media PORT=3000 HOSTNAME=0.0.0.0
 RUN mkdir -p /data/media
 EXPOSE 3000
-# Apply migrations, then serve. `after()` processing runs in this same process.
-CMD ["sh", "-c", "npx tsx scripts/migrate.ts && npx next start -p ${PORT}"]
+# Apply migrations, start the source scheduler in the background, then serve. `after()` processing runs in the web process.
+CMD ["sh", "-c", "npx tsx scripts/migrate.ts && (npx tsx scripts/scheduler.ts &) && exec npx next start -p ${PORT}"]

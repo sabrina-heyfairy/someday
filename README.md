@@ -98,7 +98,7 @@ Instagram collections and Pinterest boards become Someday collections. Any other
 
 ## Sources that sync on their own
 
-`/sources` lists what Someday pulls automatically, every `SYNC_INTERVAL_HOURS` (default 24) while the app runs, plus a Sync now button. Two kinds:
+`/sources` lists what Someday pulls automatically, every `SYNC_INTERVAL_HOURS` (default 24) via a small scheduler process that runs beside the web server in the Docker image (`npm run scheduler` locally), plus a Sync now button. Two kinds:
 
 - **Pinterest boards.** Paste any public board URL; each board becomes a collection and new pins arrive on the schedule.
 - **Reddit saved posts and comments.** One-time setup: create an app at reddit.com/prefs/apps (type *web app*, redirect URI `https://YOUR-APP/api/reddit/callback`), set `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` and `APP_URL`, redeploy, then tap Connect Reddit. Someday keeps a refresh token and reads `/user/you/saved`.

@@ -86,9 +86,17 @@ export type YtMeta = {
   vcodec?: string; formats?: unknown[]; ext?: string;
 };
 
+// Logged-in fetching. YTDLP_COOKIES_FROM_BROWSER=safari|chrome|firefox reads the browser's cookie jar (laptop; Safari needs
+// Full Disk Access for the terminal). YTDLP_COOKIES_FILE=/data/cookies.txt uses an exported Netscape cookies file (servers).
+export function ytCookieArgs(): string[] {
+  if (process.env.YTDLP_COOKIES_FILE && existsSync(process.env.YTDLP_COOKIES_FILE)) return ["--cookies", process.env.YTDLP_COOKIES_FILE];
+  if (process.env.YTDLP_COOKIES_FROM_BROWSER) return ["--cookies-from-browser", process.env.YTDLP_COOKIES_FROM_BROWSER];
+  return [];
+}
+
 export async function ytMeta(url: string): Promise<YtMeta | null> {
   try {
-    const { stdout } = await run("yt-dlp", ["-J", "--no-playlist", "--no-warnings", url], { maxBuffer: 64 * 1024 * 1024, timeout: 60_000 });
+    const { stdout } = await run("yt-dlp", ["-J", "--no-playlist", "--no-warnings", ...ytCookieArgs(), url], { maxBuffer: 64 * 1024 * 1024, timeout: 60_000 });
     return JSON.parse(stdout) as YtMeta;
   } catch {
     return null;
@@ -97,7 +105,7 @@ export async function ytMeta(url: string): Promise<YtMeta | null> {
 
 export async function ytDownload(url: string, dir: string): Promise<string | null> {
   try {
-    await run("yt-dlp", ["--no-playlist", "--no-warnings", "-f", "bv*[height<=720]+ba/b[height<=720]/b", "--merge-output-format", "mp4", "-o", join(dir, "video.%(ext)s"), url], { timeout: 180_000 });
+    await run("yt-dlp", ["--no-playlist", "--no-warnings", ...ytCookieArgs(), "-f", "bv*[height<=720]+ba/b[height<=720]/b", "--merge-output-format", "mp4", "-o", join(dir, "video.%(ext)s"), url], { timeout: 180_000 });
     const f = readdirSync(dir).find((n) => n.startsWith("video."));
     return f ? join(dir, f) : null;
   } catch {

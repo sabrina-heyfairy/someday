@@ -85,6 +85,10 @@ Cost check: a thousand screenshots through Haiku 5.5 with one image each is roug
 
 **4. Desktop.** The `/add` page, or `npm run ingest:url -- <url>`. On Android and desktop Chrome the installed app also registers as a share target, so "Share → Someday" lands on `/add` prefilled.
 
+## Collections
+
+Named boards on top of the automatic tags: "summer linen", "gift ideas", "techniques to practise". Create one at `/collections` or straight from an item's page, where every collection shows as a chip you tap to add or remove. Deleting a collection never deletes items.
+
 ## The to-make board
 
 `/make` is a four-column board: Want to make, Fabric bought, In progress, Done. Anything the AI tags with action "make" appears in the first column automatically; add anything else from its item page. Tap the arrows on a card to move it, × to take it off the board. Each card shows how long it has sat in its column. This is the "I saved it and never did anything" fix.
@@ -150,7 +154,7 @@ Migrations run on every boot. `/api/health` reports queue depth and whether AI i
 ## Known limits
 
 - TikTok and Instagram fetching depends on `yt-dlp` and breaks every few months when they change things. `brew upgrade yt-dlp` fixes most of it. Some corporate networks are IP-blocked by TikTok.
-- Facebook private groups and Instagram private accounts never fetch. Screenshot and share instead.
+- Posts that need a login (many Instagram reels, private accounts) fetch only with cookies. Set `YTDLP_COOKIES_FROM_BROWSER=chrome` (or `safari`, which needs Full Disk Access for the terminal) on the laptop, or export a `cookies.txt` with a browser extension and set `YTDLP_COOKIES_FILE` on the server. Facebook private groups still won't fetch; screenshot and share instead.
 - Near-duplicate detection is a 64-bit difference hash: identical, re-scaled, brightened, slightly scrolled, or status-bar-different images match (distance 0 to 5). Crops of 10% or more do not (distance 15+). Tune with `NEAR_DUP_THRESHOLD`.
 
 ## Roadmap
@@ -159,4 +163,4 @@ Migrations run on every boot. `/api/health` reports queue depth and whether AI i
 2. Run the Photos backfill.
 3. "Ask" mode: natural-language questions answered across all saves.
 4. Weekly digest ("you saved 4 bias-tape tutorials, here's the one you haven't watched").
-5. Collections, weekly digest, native share extension if the Shortcut feels slow.
+5. Native share extension if the Shortcut feels slow.

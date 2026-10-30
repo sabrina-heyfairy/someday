@@ -5,6 +5,7 @@ import { ItemCard } from "../../item-card";
 import { reprocess, saveNotes, toggleStar, archive } from "./actions";
 import { setStage } from "../../make/actions";
 import { STAGES } from "@/lib/stages";
+import { createCollection, toggleMembership } from "../../collections/actions";
 
 import { requireSession } from "@/lib/require-session";
 
@@ -20,6 +21,9 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
       and (tags && ${item.tags} or garments && ${item.garments} or techniques && ${item.techniques})
     order by (select count(*) from unnest(tags) t where t = any(${item.tags})) desc, created_at desc limit 8`;
   const dups = await sql<Item[]>`select * from items where duplicate_of = ${id} order by created_at`;
+  const collections = await sql<{ id: string; name: string; member: boolean }[]>`
+    select c.id, c.name, exists(select 1 from collection_items ci where ci.collection_id = c.id and ci.item_id = ${id}) member
+    from collections c order by member desc, c.name`;
   const m = (p?: string) => (p ? `/api/media/${p}` : null);
 
   return (
@@ -58,6 +62,22 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
               </form>
             ))}
             {item.stage && <form action={setStage}><input type="hidden" name="id" value={id} /><input type="hidden" name="stage" value="" /><button className="chip muted">remove</button></form>}
+          </div>
+        </Block>
+
+        <Block label="Collections">
+          <div className="flex flex-wrap gap-1 items-center">
+            {collections.map((c) => (
+              <form key={c.id} action={toggleMembership}>
+                <input type="hidden" name="collection_id" value={c.id} /><input type="hidden" name="item_id" value={id} /><input type="hidden" name="on" value={c.member ? "0" : "1"} />
+                <button className={`chip ${c.member ? "on" : ""}`}>{c.member ? "✓ " : "+ "}{c.name}</button>
+              </form>
+            ))}
+            <form action={createCollection} className="flex gap-1">
+              <input type="hidden" name="item_id" value={id} />
+              <input name="name" placeholder="New collection…" className="card rounded-full px-3 py-0.5 text-xs w-36" />
+              <button className="chip">Add</button>
+            </form>
           </div>
         </Block>
 

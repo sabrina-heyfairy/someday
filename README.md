@@ -109,6 +109,17 @@ Instagram, TikTok and Facebook have no API for saved posts, and scraping a logge
 
 Tap **Select** on the grid, tick cards, and the bar at the bottom tags, files into a collection, moves to the to-make board, stars, or archives them all at once. On an item page, open **Tags · edit** to retype its tags, category and action. `/tags` lists every tag with counts; rename one there and it changes everywhere (renaming onto an existing tag merges them; clearing the name deletes it).
 
+## Sewing tips archive
+
+Sabrina's Sewist Studio tips live in `content/sewing-tips-archive.json` (210 entries: title, source, category, tags, notes, how-to, status). Import them into Postgres (and the **Sewing tips archive** collection) with:
+
+```bash
+npm run import:tips -- --dry-run
+npm run import:tips
+```
+
+Browse at `/tips` (search + category / source / status / tag filters). On Fly, boot runs the import after migrations so a fresh deploy stays in sync. Tips also show up in the main grid and full-text search like any other item.
+
 ## Collections
 
 Named boards on top of the automatic tags: "summer linen", "gift ideas", "techniques to practise". Create one at `/collections` or straight from an item's page, where every collection shows as a chip you tap to add or remove. Deleting a collection never deletes items.

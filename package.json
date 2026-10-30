@@ -17,6 +17,7 @@
     "ingest:photos": "tsx scripts/ingest-photos.ts",
     "shortcut": "python3 scripts/build-shortcut.py",
     "import": "tsx scripts/import-export.ts",
+    "import:tips": "tsx scripts/import-sewing-tips.ts",
     "deploy": "scripts/deploy.sh",
     "scheduler": "tsx scripts/scheduler.ts"
   },

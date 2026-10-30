@@ -58,4 +58,4 @@ export type Item = {
 
 export const CATEGORIES = ["garment", "pattern", "technique", "tutorial", "fabric", "product", "inspiration", "other"] as const;
 export const ACTIONS = ["make", "buy", "learn", "inspo", "reference"] as const;
-export const SOURCES = ["instagram", "tiktok", "facebook", "reddit", "youtube", "pinterest", "web", "screenshot", "photo", "text"] as const;
+export const SOURCES = ["instagram", "tiktok", "facebook", "reddit", "youtube", "pinterest", "web", "screenshot", "photo", "text", "note"] as const;

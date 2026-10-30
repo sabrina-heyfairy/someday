@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Item } from "@/lib/db";
 
-const ICON: Record<string, string> = { instagram: "📸", tiktok: "🎵", facebook: "📘", reddit: "👽", youtube: "▶️", pinterest: "📌", web: "🌐", screenshot: "🖼️", photo: "🖼️", text: "📝" };
+const ICON: Record<string, string> = { instagram: "📸", tiktok: "🎵", facebook: "📘", reddit: "👽", youtube: "▶️", pinterest: "📌", web: "🌐", screenshot: "🖼️", photo: "🖼️", text: "📝", note: "📝" };
 
 export function ItemCard({ item }: { item: Item }) {
   const thumb = item.media?.thumbnail ? `/api/media/${item.media.thumbnail}` : null;

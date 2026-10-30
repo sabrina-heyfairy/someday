@@ -42,8 +42,15 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
       <div className="space-y-4">
         <div className="flex items-start gap-3">
           <div className="flex-1">
-            <div className="text-xs muted">{item.source} · {item.category ?? "unsorted"} · {item.action ?? ""} {item.creator && <>· by {item.creator}</>}</div>
+            <div className="text-xs muted">
+              {String(item.meta?.archive_source ?? item.source)} · {String(item.meta?.archive_category ?? item.category ?? "unsorted")} · {item.action ?? ""}
+              {item.creator && <>· by {item.creator}</>}
+              {typeof item.meta?.archive_status === "string" && <> · archive: {item.meta.archive_status}</>}
+            </div>
             <h1 className="text-xl font-semibold leading-tight mt-1">{item.title ?? "Untitled"}</h1>
+            {typeof item.meta?.archive_id === "string" && (
+              <p className="text-xs muted mt-1">From <Link href="/tips" className="underline" style={{ color: "var(--accent)" }}>Sewing tips archive</Link></p>
+            )}
           </div>
           <form action={toggleStar}><input type="hidden" name="id" value={id} /><button className="text-xl" title="Star">{item.starred ? "★" : "☆"}</button></form>
         </div>

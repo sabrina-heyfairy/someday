@@ -18,7 +18,8 @@ fly auth whoami >/dev/null || { echo "Run: fly auth login"; exit 1; }
 
 step "app $APP"
 fly apps list --json | grep -q "\"Name\": *\"$APP\"" || fly apps create "$APP" --org personal
-sed -i '' "s/^app = \".*\"/app = \"$APP\"/; s/^primary_region = \".*\"/primary_region = \"$REGION\"/" fly.toml
+# Portable in-place edit (macOS sed needs '', GNU sed rejects it).
+sed -i.bak "s/^app = \".*\"/app = \"$APP\"/; s/^primary_region = \".*\"/primary_region = \"$REGION\"/" fly.toml && rm -f fly.toml.bak
 
 step "volume 'data' in $REGION"
 fly volumes list --app "$APP" --json | grep -q '"name": *"data"' || fly volumes create data --size 10 --region "$REGION" --app "$APP" --yes

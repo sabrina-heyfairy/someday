@@ -23,8 +23,9 @@ COPY next.config.ts tsconfig.json postcss.config.mjs ./
 COPY src ./src
 COPY scripts ./scripts
 COPY supabase ./supabase
+COPY content ./content
 ENV MEDIA_DIR=/data/media PORT=3000 HOSTNAME=0.0.0.0
 RUN mkdir -p /data/media
 EXPOSE 3000
-# Apply migrations, start the source scheduler in the background, then serve. `after()` processing runs in the web process.
-CMD ["sh", "-c", "npx tsx scripts/migrate.ts && (npx tsx scripts/scheduler.ts &) && exec npx next start -p ${PORT}"]
+# Apply migrations, upsert sewing tips archive, start the source scheduler, then serve. `after()` processing runs in the web process.
+CMD ["sh", "-c", "npx tsx scripts/migrate.ts && npx tsx scripts/import-sewing-tips.ts && (npx tsx scripts/scheduler.ts &) && exec npx next start -p ${PORT}"]

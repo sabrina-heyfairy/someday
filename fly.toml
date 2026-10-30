@@ -1,35 +1,37 @@
-# Fly.io config. Change `app` to the name you created with `fly launch --no-deploy` (or `fly apps create`).
-app = "someday-stash"
-primary_region = "sjc"
+# fly.toml app configuration file generated for someday-guhxxa on 2026-10-30T14:06:30Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'someday-guhxxa'
+primary_region = 'ams'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  MEDIA_DIR = "/data/media"
-  INLINE_PROCESS = "1"
-  NEXT_TELEMETRY_DISABLED = "1"
+  INLINE_PROCESS = '1'
+  MEDIA_DIR = '/data/media'
+  NEXT_TELEMETRY_DISABLED = '1'
 
-# Persistent disk for media (and a local cache when MEDIA_BACKEND=supabase). Create once: fly volumes create data --size 10
-[mounts]
-  source = "data"
-  destination = "/data"
+[[mounts]]
+  source = 'data'
+  destination = '/data'
 
 [http_service]
-  internal_port = 3000
+  internal_port = 8080
   force_https = true
-  # Keep one machine up: processing happens after the HTTP response and would be killed by auto-stop.
-  auto_stop_machines = "off"
+  auto_stop_machines = 'off'
   auto_start_machines = true
   min_machines_running = 1
 
   [[http_service.checks]]
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "20s"
-    method = "GET"
-    path = "/api/health"
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '20s'
+    method = 'GET'
+    path = '/api/health'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "1gb"
+  size = 'shared-cpu-1x'
+  memory = '1gb'

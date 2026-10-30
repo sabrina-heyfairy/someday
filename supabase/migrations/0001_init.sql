@@ -1,6 +1,6 @@
 -- Someday: one table of saved things. Written to run on local Postgres 17 and Supabase.
-create extension if not exists vector;
 create extension if not exists pgcrypto;
+-- pgvector is optional (see 0005): hosts without it still work, minus semantic search.
 
 create table if not exists items (
   id            uuid primary key default gen_random_uuid(),
@@ -41,8 +41,7 @@ create table if not exists items (
   notes         text,
   starred       boolean not null default false,
   archived      boolean not null default false,
-  -- search
-  embedding     vector(1024),
+  -- search (embedding vector(1024) is added by 0005 when pgvector is available)
   search        tsvector
 );
 
@@ -52,7 +51,6 @@ create index if not exists items_search_idx     on items using gin (search);
 create index if not exists items_tags_idx       on items using gin (tags);
 create index if not exists items_status_idx     on items (status) where status <> 'done';
 create index if not exists items_created_idx    on items (created_at desc);
-create index if not exists items_embedding_idx  on items using hnsw (embedding vector_cosine_ops);
 
 create or replace function set_updated_at() returns trigger language plpgsql as $$
 begin new.updated_at = now(); return new; end $$;

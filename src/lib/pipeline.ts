@@ -97,8 +97,8 @@ export async function processItem(id: string) {
     techniques = ${ex.techniques}, fabrics = ${ex.fabrics}, colors = ${ex.colors},
     patterns = ${sql.json(ex.patterns as never)}, products = ${sql.json(ex.products as never)}, steps = ${ex.steps},
     transcript = ${transcript}, ocr_text = ${ex.ocr_text},
-    media = ${sql.json(media as never)}, meta = ${sql.json(meta as never)},
-    embedding = ${vec ? JSON.stringify(vec) : null}
+    media = ${sql.json(media as never)}, meta = ${sql.json(meta as never)}
+    ${vec ? sql`, embedding = ${JSON.stringify(vec)}` : sql``}
     where id = ${id}`;
 
   // 4. Mirror media to object storage when configured (no-op locally).

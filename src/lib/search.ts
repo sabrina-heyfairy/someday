@@ -3,10 +3,16 @@ import { sql, type Item } from "./db";
 
 export type Filters = { q?: string; category?: string; source?: string; action?: string; tag?: string; status?: string; starred?: boolean; limit?: number };
 
+let vectorReady: boolean | null = null;
+async function hasVector() {
+  if (vectorReady === null) { const [r] = await sql<{ ok: boolean }[]>`select exists(select 1 from information_schema.columns where table_name='items' and column_name='embedding') ok`; vectorReady = r.ok; }
+  return vectorReady;
+}
+
 export async function searchItems(f: Filters): Promise<Item[]> {
   const limit = f.limit ?? 60;
   const q = f.q?.trim();
-  const vec = q ? await embedQuery(q) : null;
+  const vec = q && (await hasVector()) ? await embedQuery(q) : null;
   return sql<Item[]>`
     select * from items
     where archived = false and duplicate_of is null

@@ -25,10 +25,17 @@ fly volumes list --app "$APP" --json | grep -q '"name": *"data"' || fly volumes 
 
 step "postgres $DB"
 if ! fly apps list --json | grep -q "\"Name\": *\"$DB\""; then
-  fly postgres create --name "$DB" --region "$REGION" --org personal --vm-size shared-cpu-1x --volume-size 3 --initial-cluster-size 1 --password "$(openssl rand -hex 16)"
+  # PostgreSQL 17 image: it ships pgvector. The default (18) does not, and `create extension vector` fails on boot.
+  fly postgres create --name "$DB" --region "$REGION" --org personal --vm-size shared-cpu-1x --volume-size 3 --initial-cluster-size 1 --image-ref flyio/postgres-flex:17.7 --password "$(openssl rand -hex 16)"
+  # New machines default to the proxy's idle auto-stop; a database must stay up.
+  for m in $(fly machines list --app "$DB" --json | python3 -c 'import sys,json; print(" ".join(x["id"] for x in json.load(sys.stdin)))'); do
+    fly machine update "$m" --app "$DB" --autostop=off --autostart=true -y >/dev/null
+  done
 fi
-if ! fly secrets list --app "$APP" | grep -q '^DATABASE_URL'; then
-  fly postgres attach "$DB" --app "$APP" --yes
+if ! fly secrets list --app "$APP" | grep -q 'DATABASE_URL'; then
+  # attach needs a WireGuard tunnel; some corporate networks block it (websocket 403). Then set DATABASE_URL by hand:
+  #   fly secrets set --app $APP DATABASE_URL='postgres://postgres:PASSWORD@'$DB'.flycast:5432/postgres?sslmode=disable'
+  fly postgres attach "$DB" --app "$APP" --yes || { echo "attach failed (tunnel blocked?). Set DATABASE_URL manually, see comment above, then re-run."; exit 1; }
 fi
 
 step "secrets"

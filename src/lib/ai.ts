@@ -4,7 +4,9 @@ import { Extraction, EXTRACTION_JSON_SHAPE } from "./extraction";
 
 import { sql } from "./db";
 
-const MOCK = process.env.MOCK_AI === "1" || !process.env.ANTHROPIC_API_KEY;
+// Credentials can be an API key, a bearer token, or Workload Identity Federation (the SDK resolves them in that order).
+export const HAS_AI_CREDS = Boolean(process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_AUTH_TOKEN || process.env.ANTHROPIC_FEDERATION_RULE_ID || process.env.ANTHROPIC_PROFILE);
+const MOCK = process.env.MOCK_AI === "1" || !HAS_AI_CREDS;
 // Tiering: live saves get the better model, bulk backfill gets the cheap one.
 export type Tier = "live" | "bulk";
 const MODELS: Record<Tier, string> = {
@@ -44,7 +46,8 @@ const SYSTEM = `You catalog things a home sewist saves from social media and the
 export async function extract(input: ExtractInput): Promise<Extraction> {
   if (MOCK) return mockExtract(input);
   // Pin to the public API: a work shell may export ANTHROPIC_BASE_URL (corporate gateway) and the SDK would pick it up.
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, baseURL: process.env.SOMEDAY_ANTHROPIC_BASE_URL ?? "https://api.anthropic.com" });
+  // No apiKey here on purpose: the SDK picks up ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, an `ant auth login` profile, or WIF env vars.
+  const client = new Anthropic({ baseURL: process.env.SOMEDAY_ANTHROPIC_BASE_URL ?? "https://api.anthropic.com" });
   const content: Anthropic.Messages.ContentBlockParam[] = [];
   for (const p of input.imagePaths.slice(0, 10)) {
     content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: readFileSync(p).toString("base64") } });

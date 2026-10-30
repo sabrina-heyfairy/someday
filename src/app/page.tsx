@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { facets, searchItems, spend } from "@/lib/search";
+import { HAS_AI_CREDS } from "@/lib/ai";
 import { ItemCard } from "./item-card";
 
 import { requireSession } from "@/lib/require-session";
@@ -57,7 +58,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
         </div>
       )}
       <p className="text-[11px] muted text-center pt-4">
-        AI spend: ${ai.month.toFixed(2)} this month · ${ai.total.toFixed(2)} all time · {ai.calls} calls{process.env.MOCK_AI === "1" || !process.env.ANTHROPIC_API_KEY ? " · mock mode" : ""}
+        AI spend: ${ai.month.toFixed(2)} this month · ${ai.total.toFixed(2)} all time · {ai.calls} calls{process.env.MOCK_AI === "1" || !HAS_AI_CREDS ? " · mock mode" : ""}
       </p>
     </div>
   );

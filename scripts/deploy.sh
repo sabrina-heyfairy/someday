@@ -41,7 +41,12 @@ fi
 
 step "secrets"
 ANTHROPIC_API_KEY="$(envval ANTHROPIC_API_KEY)"
-[ -n "$ANTHROPIC_API_KEY" ] || { echo "ANTHROPIC_API_KEY missing from .env.local"; exit 1; }
+if [ -z "$ANTHROPIC_API_KEY" ]; then
+  echo "ERROR: ANTHROPIC_API_KEY missing from .env.local in $(pwd)"
+  echo "Add a line like:  ANTHROPIC_API_KEY=sk-ant-api03-..."
+  echo "Then re-run:  npm run deploy"
+  exit 1
+fi
 EXISTING="$(fly secrets list --app "$APP")"
 have() { echo "$EXISTING" | grep -q "^$1 "; }
 SET=(MOCK_AI=0 "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" MEDIA_BACKEND=local)

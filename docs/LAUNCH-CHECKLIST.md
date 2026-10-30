@@ -23,8 +23,11 @@ Live at https://someday-stash.fly.dev. Web password is in `.deploy-password.txt`
 **(in repo)** Deploy script is portable (macOS + Linux `sed`), copies `content/` into the image, and runs `npm run import:tips` on boot so the sewing tips archive is upserted after migrations. `fly.toml` keeps `auto_stop_machines = "off"`, `min_machines_running = 1`, **2gb RAM**, and `restart.policy = always` so a multi-photo share cannot leave the app with “no started VMs”.
 
 ### 2c. After the multi-photo crash fix (owner)
+Run these from **your local someday checkout** (wherever the repo lives — not necessarily `~/Documents/someday`):
 ```bash
-cd ~/Documents/someday && git pull
+git pull
+# Deploy needs ANTHROPIC_API_KEY in .env.local (same folder). Check:
+grep '^ANTHROPIC_API_KEY=sk-' .env.local
 npm run deploy
 # If the machine is still on 1gb after deploy:
 fly scale memory 2048 --app someday-stash

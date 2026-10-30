@@ -14,7 +14,7 @@ export type Capture = {
   url?: string | null;
   text?: string | null;
   image?: { buffer: Buffer; filename?: string } | null;
-  channel: "shortcut" | "sms" | "folder" | "photos" | "api";
+  channel: "shortcut" | "sms" | "folder" | "photos" | "import" | "api";
   meta?: Record<string, unknown>;
   createdAt?: Date | null;   // original capture time (e.g. Photos date) so the archive keeps its timeline
 };

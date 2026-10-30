@@ -83,7 +83,18 @@ Manual alternative: export from Photos yourself (Media Types → Screenshots →
 
 Cost check: a thousand screenshots through Haiku 5.5 with one image each is roughly a dollar or two.
 
-**4. Desktop.** The `/add` page, or `npm run ingest:url -- <url>`. On Android and desktop Chrome the installed app also registers as a share target, so "Share → Someday" lands on `/add` prefilled.
+**4. Everything you already saved inside each app.** Request your data export (Instagram: Settings → Your activity → Download your information, JSON format. TikTok: Settings → Account → Download your data, JSON. Reddit: reddit.com/settings/data-request. Facebook: Download your information, JSON). Unzip, then:
+
+```bash
+npm run import -- ~/Downloads/instagram-export --dry-run   # count first
+npm run import -- ~/Downloads/instagram-export             # queue everything, keep original save dates
+npm run import -- ~/Downloads/user_data_tiktok.json --include-likes
+npm run import -- --board https://www.pinterest.com/you/summer-linen/   # any public Pinterest board
+```
+
+Instagram collections and Pinterest boards become Someday collections. Any other file full of links works too (the importer harvests Instagram, TikTok, Reddit, Pinterest, Facebook and YouTube links from anything). Imported items use the cheap Haiku tier. Add `--process` to run the AI right away, or let the worker pick them up.
+
+**5. Desktop.** The `/add` page, or `npm run ingest:url -- <url>`. On Android and desktop Chrome the installed app also registers as a share target, so "Share → Someday" lands on `/add` prefilled.
 
 ## Fixing what the AI got wrong
 
@@ -108,6 +119,7 @@ Open the site in Safari, tap Share → **Add to Home Screen**. It installs as a 
 | `npm run dev` | Web app + inline processing |
 | `npm run worker` | Separate queue worker (set `INLINE_PROCESS=0` on the web side) |
 | `npm run ingest:photos` | Backfill screenshots from the Photos library |
+| `npm run import -- <export>` | Import saved posts from Instagram, TikTok, Reddit, Facebook or Pinterest exports |
 | `npm run ingest:folder -- <dir>` | Backfill a folder of images |
 | `npm run retry` | Re-run failed or stuck items |
 | `npm run rehash` | Compute perceptual hashes for items that predate dedupe |

@@ -15,7 +15,8 @@
     "rehash": "tsx scripts/rehash.ts",
     "hash:compare": "tsx scripts/hash-compare.ts",
     "ingest:photos": "tsx scripts/ingest-photos.ts",
-    "shortcut": "python3 scripts/build-shortcut.py"
+    "shortcut": "python3 scripts/build-shortcut.py",
+    "import": "tsx scripts/import-export.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",

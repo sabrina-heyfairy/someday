@@ -85,7 +85,7 @@ export async function processItem(id: string) {
   }
 
   // 3. Understand it
-  const tier = item.channel === "folder" || item.channel === "photos" ? "bulk" : "live";
+  const tier = item.channel === "folder" || item.channel === "photos" || item.channel === "import" ? "bulk" : "live";
   const ex = await extract({ itemId: id, tier, url: item.url, source: item.source, rawText: item.raw_text, pageText, transcript, imagePaths: images, metaTitle, metaCreator });
   const embedText = [ex.title, ex.summary, ex.tags.join(" "), ex.garments.join(" "), ex.techniques.join(" "), ex.fabrics.join(" "), ex.ocr_text, item.raw_text, transcript?.slice(0, 4000)].filter(Boolean).join("\n");
   const vec = await embed(embedText, id);

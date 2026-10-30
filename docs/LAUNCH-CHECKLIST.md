@@ -23,8 +23,11 @@ Live at https://someday-stash.fly.dev. Web password is in `.deploy-password.txt`
 **(in repo)** Deploy script is portable (macOS + Linux `sed`), copies `content/` into the image, and runs `npm run import:tips` on boot so the sewing tips archive is upserted after migrations. `fly.toml` keeps `auto_stop_machines = "off"`, `min_machines_running = 1`, **2gb RAM**, and `restart.policy = always` so a multi-photo share cannot leave the app with “no started VMs”.
 
 ### 2c. After the multi-photo crash fix (owner)
+Run these from **your local someday checkout** (wherever the repo lives — not necessarily `~/Documents/someday`):
 ```bash
-cd ~/Documents/someday && git pull
+git pull
+# Deploy needs ANTHROPIC_API_KEY in .env.local (same folder). Check:
+grep '^ANTHROPIC_API_KEY=sk-' .env.local
 npm run deploy
 # If the machine is still on 1gb after deploy:
 fly scale memory 2048 --app someday-stash
@@ -55,10 +58,13 @@ Then regenerate and reinstall the Shortcut (section 4) — the old one must not 
   ```
 
 ## 4. Phone: Shortcut + home screen
-- [ ] **Regenerate the Shortcut after the multi-photo capture fix** (older builds POST every selected photo in one body and crash the Fly VM). On a Mac signed into iCloud:
+- [ ] **Regenerate the Shortcut after the multi-photo capture fix** (older builds POST every selected photo in one body and crash the Fly VM). On a Mac signed into iCloud, from your someday checkout:
   ```bash
-  cd ~/Documents/someday && git pull
+  git pull
   TOKEN=$(fly ssh console --app someday-stash -C 'printenv CAPTURE_TOKEN' 2>/dev/null | tail -1)
+  # Prefer a fresh token if the old one was pasted into chat/email:
+  # fly secrets set --app someday-stash CAPTURE_TOKEN="$(openssl rand -hex 24)"
+  # TOKEN=$(fly ssh console --app someday-stash -C 'printenv CAPTURE_TOKEN' 2>/dev/null | tail -1)
   npm run shortcut -- https://someday-stash.fly.dev "$TOKEN"
   ```
   Produces `Save to Someday.shortcut`. AirDrop it to your iPhone → delete the old "Save to Someday" if present → Add Shortcut.

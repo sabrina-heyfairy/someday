@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { facets, searchItems, spend } from "@/lib/search";
+import { sql } from "@/lib/db";
 import { HAS_AI_CREDS } from "@/lib/ai";
-import { ItemCard } from "./item-card";
+import { BulkGrid } from "./bulk-grid";
 
 import { requireSession } from "@/lib/require-session";
 
@@ -12,10 +13,11 @@ type SP = Record<string, string | undefined>;
 export default async function Home({ searchParams }: { searchParams: Promise<SP> }) {
   await requireSession("/");
   const sp = await searchParams;
-  const [items, f, ai] = await Promise.all([
+  const [items, f, ai, collections] = await Promise.all([
     searchItems({ q: sp.q, category: sp.category, source: sp.source, tag: sp.tag, status: sp.status, action: sp.action }),
     facets(),
     spend(),
+    sql<{ id: string; name: string }[]>`select id, name from collections order by name`,
   ]);
   const total = f.counts.reduce((a, c) => a + c.n, 0);
   const pending = f.counts.filter((c) => c.status !== "done").reduce((a, c) => a + c.n, 0);
@@ -45,6 +47,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
       {f.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5 text-xs">
           {f.tags.map((t) => <Link key={t.tag} href={link({ tag: sp.tag === t.tag ? undefined : t.tag })} className={`chip ${sp.tag === t.tag ? "on" : ""}`}>#{t.tag}</Link>)}
+          <Link href="/tags" className="chip muted">edit tags…</Link>
         </div>
       )}
 
@@ -53,9 +56,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
           {total === 0 ? <>Nothing saved yet. Share a link to <code>/api/capture</code> or run <code>npm run ingest:folder ~/Desktop/screenshots</code>.</> : "No matches. Try fewer words."}
         </div>
       ) : (
-        <div className="columns-2 sm:columns-3 lg:columns-4 gap-3 [&>*]:mb-3">
-          {items.map((it) => <ItemCard key={it.id} item={it} />)}
-        </div>
+        <BulkGrid items={items} collections={collections} />
       )}
       <p className="text-[11px] muted text-center pt-4">
         AI spend: ${ai.month.toFixed(2)} this month · ${ai.total.toFixed(2)} all time · {ai.calls} calls{process.env.MOCK_AI === "1" || !HAS_AI_CREDS ? " · mock mode" : ""}

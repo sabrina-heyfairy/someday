@@ -6,6 +6,8 @@ import { reprocess, saveNotes, toggleStar, archive } from "./actions";
 import { setStage } from "../../make/actions";
 import { STAGES } from "@/lib/stages";
 import { createCollection, toggleMembership } from "../../collections/actions";
+import { updateFacets } from "../../bulk-actions";
+import { ACTIONS, CATEGORIES } from "@/lib/db";
 
 import { requireSession } from "@/lib/require-session";
 
@@ -81,7 +83,19 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           </div>
         </Block>
 
-        <Facts label="Tags" items={item.tags} q="tag" />
+        <details>
+          <summary className="text-xs uppercase tracking-wide muted cursor-pointer">Tags <span className="normal-case">· {item.tags.length ? item.tags.join(", ") : "none"} · edit</span></summary>
+          <form action={updateFacets} className="mt-2 space-y-2">
+            <input type="hidden" name="id" value={id} />
+            <input name="tags" defaultValue={item.tags.join(", ")} placeholder="comma, separated, tags" className="card w-full rounded-xl px-3 py-1.5 text-sm" />
+            <div className="flex flex-wrap gap-2 text-sm">
+              <select name="category" defaultValue={item.category ?? ""} className="card rounded-xl px-2 py-1"><option value="">category…</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select>
+              <select name="action" defaultValue={item.action ?? ""} className="card rounded-xl px-2 py-1"><option value="">action…</option>{ACTIONS.map((a) => <option key={a}>{a}</option>)}</select>
+              <button className="chip on">Save</button>
+            </div>
+          </form>
+          <div className="flex flex-wrap gap-1 mt-2">{item.tags.map((t) => <Link key={t} href={`/?tag=${encodeURIComponent(t)}`} className="chip">{t}</Link>)}</div>
+        </details>
         <Facts label="Garments" items={item.garments} />
         <Facts label="Techniques" items={item.techniques} />
         <Facts label="Fabrics" items={item.fabrics} />

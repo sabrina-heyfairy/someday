@@ -85,6 +85,10 @@ Cost check: a thousand screenshots through Haiku 5.5 with one image each is roug
 
 **4. Desktop.** The `/add` page, or `npm run ingest:url -- <url>`. On Android and desktop Chrome the installed app also registers as a share target, so "Share → Someday" lands on `/add` prefilled.
 
+## Fixing what the AI got wrong
+
+Tap **Select** on the grid, tick cards, and the bar at the bottom tags, files into a collection, moves to the to-make board, stars, or archives them all at once. On an item page, open **Tags · edit** to retype its tags, category and action. `/tags` lists every tag with counts; rename one there and it changes everywhere (renaming onto an existing tag merges them; clearing the name deletes it).
+
 ## Collections
 
 Named boards on top of the automatic tags: "summer linen", "gift ideas", "techniques to practise". Create one at `/collections` or straight from an item's page, where every collection shows as a chip you tap to add or remove. Deleting a collection never deletes items.

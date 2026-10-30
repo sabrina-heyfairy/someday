@@ -8,6 +8,7 @@ import { attachPreview } from "../src/lib/pipeline";
     npm run previews                 # items never tried, or tried more than 7 days ago
     npm run previews -- --force      # retry everything without a thumbnail
     npm run previews -- --limit 20
+    PREVIEW_CONCURRENCY=1 npm run previews   # gentle (what the server does at boot)
 */
 
 async function main() {
@@ -30,7 +31,8 @@ async function main() {
       tally[`${row.source}:${r}`] = (tally[`${row.source}:${r}`] ?? 0) + 1;
     }
   };
-  await Promise.all([worker(), worker(), worker()]);
+  const concurrency = Math.max(1, Number(process.env.PREVIEW_CONCURRENCY) || 3);
+  await Promise.all(Array.from({ length: concurrency }, worker));
   console.table(tally);
   await sql.end();
 }

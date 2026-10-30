@@ -19,6 +19,7 @@
     "import": "tsx scripts/import-export.ts",
     "import:tips": "tsx scripts/import-sewing-tips.ts",
     "test:capture": "tsx scripts/test-multi-capture.ts",
+    "previews": "tsx scripts/backfill-previews.ts",
     "deploy": "scripts/deploy.sh",
     "scheduler": "tsx scripts/scheduler.ts"
   },

@@ -7,7 +7,7 @@ export function ItemCard({ item }: { item: Item }) {
   const thumb = item.media?.thumbnail ? `/api/media/${item.media.thumbnail}` : null;
   return (
     <Link href={`/item/${item.id}`} className="card block break-inside-avoid rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
-      {thumb ? <img src={thumb} alt="" className="w-full object-cover" loading="lazy" /> : <div className="h-28 flex items-center justify-center text-3xl" style={{ background: "var(--line)" }}>{ICON[item.source] ?? "🪶"}</div>}
+      {thumb && <img src={thumb} alt="" className="w-full object-cover" loading="lazy" />}
       <div className="p-3 space-y-1.5">
         <div className="flex items-center gap-1.5 text-[11px] muted">
           <span>{ICON[item.source] ?? "🪶"} {item.source}</span>

@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { embed, extract, transcribe } from "./ai";
 import { sql, type Item } from "./db";
-import { dhash, download, extractAudio, itemDir, keyframes, MEDIA_DIR, pageInfo, rel, toJpeg, ytDownload, ytMeta } from "./media";
+import { dhash, download, extractAudio, fetchPreview, itemDir, keyframes, MEDIA_DIR, pageInfo, rel, tiktokEmbedInfo, toJpeg, ytCreator, ytDownload, ytMeta } from "./media";
 import { ensureLocal, syncItemDir } from "./storage";
 
 // Claim up to `limit` queued items and process them one at a time.
@@ -52,7 +52,7 @@ export async function processItem(id: string) {
     if (yt && (yt.duration || yt.formats?.length)) {
       meta.yt = { title: yt.title, description: yt.description, uploader: yt.uploader, uploader_id: yt.uploader_id, channel: yt.channel, duration: yt.duration, extractor: yt.extractor_key };
       metaTitle = yt.title ?? null;
-      metaCreator = yt.uploader_id ? `@${yt.uploader_id}` : yt.uploader ?? yt.channel ?? null;
+      metaCreator = ytCreator(yt) ?? null;
       pageText = yt.description ?? null;
       const video = await ytDownload(item.url, dir);
       if (video) {
@@ -68,13 +68,16 @@ export async function processItem(id: string) {
         await pullImage(yt.thumbnail, dir, images, media);
       }
     } else {
+      // TikTok refuses yt-dlp from server IPs; its embed page still gives us the poster, caption and author.
+      const tt = item.source === "tiktok" ? await tiktokEmbedInfo(item.url) : null;
       const info = await pageInfo(item.url);
-      if (info.error && !info.title) throw new Error(`could not read page: ${info.error}`);
-      meta.page = { title: info.title, description: info.description, author: info.author };
-      metaTitle = info.title ?? null;
-      metaCreator = info.author ?? null;
-      pageText = [info.description, info.text].filter(Boolean).join("\n\n") || null;
-      if (info.image && !media.thumbnail) await pullImage(info.image, dir, images, media);
+      if (info.error && !info.title && !tt?.image) throw new Error(`could not read page: ${info.error}`);
+      meta.page = { title: tt?.title ?? info.title, description: info.description, author: tt?.author ?? info.author };
+      metaTitle = tt?.title ?? info.title ?? null;
+      metaCreator = tt?.author ?? info.author ?? null;
+      pageText = [tt?.title, info.description, info.text].filter(Boolean).join("\n\n") || null;
+      const img = tt?.image ?? info.image;
+      if (img && !media.thumbnail) await pullImage(img, dir, images, media);
     }
   }
 
@@ -113,4 +116,30 @@ async function pullImage(url: string, dir: string, images: string[], media: Item
     images.push(jpg);
     media.thumbnail = rel(jpg);
   } catch { /* no thumbnail, fine */ }
+}
+
+// Give an already-processed item a picture without re-running AI: used for archive imports that were inserted "done".
+// Records the attempt in meta.preview_tried so a link that has nothing to show is not re-fetched on every boot.
+export async function attachPreview(id: string): Promise<"added" | "none" | "skipped"> {
+  const [item] = await sql<Item[]>`select * from items where id = ${id}`;
+  if (!item?.url || item.media?.thumbnail) return "skipped";
+  const dir = itemDir(id);
+  const media: Item["media"] = { ...item.media };
+  const meta: Record<string, unknown> = { ...item.meta, preview_tried: new Date().toISOString() };
+  const images: string[] = [];
+  const p = await fetchPreview(item.url);
+  if (p) {
+    await pullImage(p.image, dir, images, media);
+    meta.preview_via = p.via;
+    if (p.title && !meta.page) meta.page = { title: p.title, description: p.description, author: p.creator };
+  }
+  const added = Boolean(media.thumbnail);
+  await sql`update items set media = ${sql.json(media as never)}, meta = ${sql.json(meta as never)},
+    creator = coalesce(creator, ${p?.creator ?? null}) where id = ${id}`;
+  if (added && !item.phash) {
+    const h = await dhash(join(MEDIA_DIR, media.thumbnail!));
+    if (h) await sql`update items set phash = ${h}::bit(64) where id = ${id}`;
+  }
+  await syncItemDir(id);
+  return added ? "added" : "none";
 }

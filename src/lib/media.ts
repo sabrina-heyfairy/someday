@@ -33,7 +33,9 @@ const SHORTENERS = /^(vm\.tiktok\.com|vt\.tiktok\.com|pin\.it|fb\.watch|redd\.it
 export async function resolveShortLink(url: string): Promise<string> {
   try {
     const u = new URL(url);
-    if (!SHORTENERS.test(u.hostname.replace(/^www\./, ""))) return url;
+    const host = u.hostname.replace(/^www\./, "");
+    const tiktokShare = host === "tiktok.com" && /^\/t\//.test(u.pathname);
+    if (!SHORTENERS.test(host) && !tiktokShare) return url;
     if (u.hostname === "youtu.be") return `https://www.youtube.com/watch?v=${u.pathname.slice(1)}`;
     const r = await fetch(url, { method: "HEAD", redirect: "follow", headers: { "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15" } });
     return r.url && r.url !== url ? r.url : url;
@@ -198,4 +200,45 @@ export async function pageInfo(url: string): Promise<PageInfo> {
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e) };
   }
+}
+
+const decodeEntities = (v: string) => v.replace(/&amp;/g, "&").replace(/\\u0026/g, "&").replace(/\\\//g, "/");
+
+export type TikTokEmbed = { id: string; image?: string; title?: string; author?: string };
+
+// TikTok blocks yt-dlp and oEmbed thumbnails from datacenter IPs, but its public embed page carries the video poster
+// and caption. Share links (tiktok.com/t/XYZ, vm.tiktok.com/XYZ) are followed once to find the numeric video id.
+export async function tiktokEmbedInfo(url: string): Promise<TikTokEmbed | null> {
+  const idOf = (u: string) => u.match(/\/(?:video|photo|v)\/(\d+)/)?.[1];
+  let id = idOf(url);
+  if (!id) id = idOf(await resolveShortLink(url));
+  if (!id) return null;
+  try {
+    const r = await fetch(`https://www.tiktok.com/embed/v2/${id}`, { headers: { "User-Agent": "someday/0.1 personal bookmark tool" }, redirect: "follow" });
+    if (!r.ok) return { id };
+    const html = await r.text();
+    const image = html.match(/poster="([^"]+)"/)?.[1] ?? html.match(/"(?:cover|originCover|dynamicCover)":"([^"]+)"/)?.[1];
+    const title = html.match(/"desc":"((?:[^"\\]|\\.)*)"/)?.[1];
+    const author = html.match(/"uniqueId":"([^"]+)"/)?.[1];
+    return { id, image: image ? decodeEntities(image) : undefined, title: title ? JSON.parse(`"${title}"`) : undefined, author: author ? `@${author}` : undefined };
+  } catch { return { id }; }
+}
+
+// Instagram and Facebook report numeric account ids as uploader_id; prefer the readable handle/name.
+export const ytCreator = (yt: YtMeta) => yt.uploader_id && !/^\d+$/.test(yt.uploader_id) ? `@${yt.uploader_id}` : yt.uploader ?? yt.channel ?? (yt.uploader_id ? `@${yt.uploader_id}` : undefined);
+
+export type Preview = { image: string; title?: string; creator?: string; description?: string; via: "tiktok-embed" | "yt-dlp" | "og" };
+
+// Cheapest route to a picture for a link, without downloading the video: TikTok embed poster, then yt-dlp's thumbnail
+// field, then the page's og:image. Used to backfill items that were inserted already "done" (archive imports).
+export async function fetchPreview(url: string): Promise<Preview | null> {
+  if (detectSource(url, "link") === "tiktok") {
+    const t = await tiktokEmbedInfo(url);
+    if (t?.image) return { image: t.image, title: t.title, creator: t.author, via: "tiktok-embed" };
+  }
+  const yt = await ytMeta(url);
+  if (yt?.thumbnail) return { image: yt.thumbnail, title: yt.title, creator: ytCreator(yt), description: yt.description, via: "yt-dlp" };
+  const info = await pageInfo(url);
+  if (info.image) return { image: info.image, title: info.title, creator: info.author, description: info.description, via: "og" };
+  return null;
 }

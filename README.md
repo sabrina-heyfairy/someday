@@ -141,6 +141,7 @@ Open the site in Safari, tap Share → **Add to Home Screen**. It installs as a 
 | `npm run dev` | Web app + inline processing |
 | `npm run worker` | Separate queue worker (set `INLINE_PROCESS=0` on the web side) |
 | `npm run ingest:photos` | Backfill screenshots from the Photos library |
+| `npm run previews` | Fetch a picture for link items that have none (archive imports); runs on every boot too |
 | `npm run import -- <export>` | Import saved posts from Instagram, TikTok, Reddit, Facebook or Pinterest exports |
 | `npm run ingest:folder -- <dir>` | Backfill a folder of images |
 | `npm run retry` | Re-run failed or stuck items |

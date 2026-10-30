@@ -6,3 +6,4 @@ data/
 .tools/
 osxphotos_crash.log
 dist/
+.deploy-password.txt

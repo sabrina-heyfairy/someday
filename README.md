@@ -131,39 +131,20 @@ Open the site in Safari, tap Share → **Add to Home Screen**. It installs as a 
 
 ## Deploying
 
-Target: Fly.io for the app (it needs ffmpeg and yt-dlp, so a container host), Supabase for Postgres and media. Everything below is in the repo; you create the two accounts.
-
-**1. Database (Supabase).** Create a project. In Project Settings → Database, copy the **Session pooler** connection string (port 5432) for migrations and the **Transaction pooler** string (port 6543) for the app; both work with this code. Then from your laptop:
+One vendor: Fly.io hosts the app, its Postgres database, and the media disk. (Supabase Storage is still supported via `MEDIA_BACKEND=supabase` if you ever want media in a bucket, but it is not needed.)
 
 ```bash
-DATABASE_URL='postgresql://postgres.xxxx:PASSWORD@aws-0-us-east-1.pooler.supabase.com:5432/postgres' npm run db:migrate
+brew install flyctl && fly auth login     # once, needs a Fly account with a card on file
+npm run deploy                             # creates app, 10 GB volume, Fly Postgres, secrets, deploys, health-checks
 ```
 
-**2. Media bucket (Supabase).** Storage → New bucket → name `media`, **private**. Copy Project URL and the `service_role` key from Project Settings → API.
+`npm run deploy` is safe to re-run; it only creates what is missing. It reads `ANTHROPIC_API_KEY` (and optional `OPENAI_API_KEY`, `VOYAGE_API_KEY`, `APP_PASSWORD`) from `.env.local`, generates a capture token and a web password if you did not set one (written to `.deploy-password.txt`, gitignored), and prints the live URL. Migrations run on every boot. `/api/health` reports queue depth and whether AI is in mock mode.
 
-**3. App (Fly.io).**
+Then `npm run shortcut -- https://YOUR-APP.fly.dev YOUR_CAPTURE_TOKEN` on an iCloud-signed Mac, AirDrop the file, and Add to Home Screen from Safari.
 
-```bash
-brew install flyctl && fly auth login
-fly apps create someday-stash            # or edit `app` in fly.toml to a name you like
-fly volumes create data --size 10 --region sjc
-fly secrets set \
-  DATABASE_URL='postgresql://postgres.xxxx:PASSWORD@aws-0-us-east-1.pooler.supabase.com:6543/postgres' \
-  CAPTURE_TOKEN="$(openssl rand -hex 24)" \
-  APP_PASSWORD='pick-something-long' \
-  MEDIA_BACKEND=supabase SUPABASE_URL='https://xxxx.supabase.co' SUPABASE_SERVICE_ROLE_KEY='eyJ...' \
-  MOCK_AI=0 ANTHROPIC_API_KEY='sk-ant-...' OPENAI_API_KEY='sk-...' VOYAGE_API_KEY='pa-...'
-fly deploy
-fly open
-```
+**Costs** at personal scale: about $5 a month on Fly (app machine, small Postgres, 13 GB of disk), AI is cents per save.
 
-Migrations run on every boot. `/api/health` reports queue depth and whether AI is in mock mode. The volume holds media (and a local cache when the bucket is on); with `MEDIA_LOCAL_CACHE=0` files are deleted locally after upload and the volume can be small.
-
-**4. Point the phone at it.** `npm run shortcut -- https://someday-stash.fly.dev YOUR_CAPTURE_TOKEN` on an iCloud-signed Mac, AirDrop the file, and Add to Home Screen from Safari.
-
-**Costs** at personal scale: Fly shared-cpu-1x with 1 GB is a few dollars a month, Supabase free tier covers the database and bucket, AI is cents per save.
-
-**Twilio** (optional): point the number's messaging webhook at `https://your-app/api/capture` and add `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` to secrets.
+**Twilio** (optional): point the number's messaging webhook at `https://your-app/api/capture` and `fly secrets set TWILIO_ACCOUNT_SID=... TWILIO_AUTH_TOKEN=...`.
 
 **CI** runs typecheck, build, a lockfile check and a Docker build on every push.
 

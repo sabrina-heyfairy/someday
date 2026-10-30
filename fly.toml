@@ -10,7 +10,7 @@ primary_region = "sjc"
   INLINE_PROCESS = "1"
   NEXT_TELEMETRY_DISABLED = "1"
 
-# Persistent disk for media (and a local cache when MEDIA_BACKEND=supabase). Create once: fly volumes create data --size 10
+# Persistent disk for media. scripts/deploy.sh creates it (fly volumes create data --size 10).
 [mounts]
   source = "data"
   destination = "/data"

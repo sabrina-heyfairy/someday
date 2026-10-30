@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // Gate the UI and media behind the session cookie. Token-authenticated API routes and the login page stay open.
 // (Called "proxy" in Next 16, "middleware" in Next 15 - see middleware.ts which re-exports this.)
-const OPEN = [/^\/login$/, /^\/api\/(capture|process|items|health)$/, /^\/manifest\.webmanifest$/, /^\/icons\//];
+const OPEN = [/^\/login$/, /^\/api\/(capture|process|items|health|sync)$/, /^\/api\/reddit\//, /^\/manifest\.webmanifest$/, /^\/icons\//];
 const COOKIE = "someday_session";
 
 export function proxy(req: NextRequest) {

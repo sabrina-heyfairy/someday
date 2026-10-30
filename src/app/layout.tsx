@@ -24,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <nav className="flex gap-4 text-sm muted">
               <Link href="/collections">Collections</Link>
               <Link href="/make">To make</Link>
+              <Link href="/sources">Sources</Link>
               <Link href="/?status=queued">Queue</Link>
               <Link href="/add">Add</Link>
             </nav>

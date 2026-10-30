@@ -4,6 +4,7 @@ import { basename, extname, join } from "node:path";
 import { intake } from "../src/lib/intake";
 import { processQueued } from "../src/lib/pipeline";
 import { sql } from "../src/lib/db";
+import { fetchPinterestBoard } from "../src/lib/sources";
 
 /*
   Import everything you already saved inside each app.
@@ -104,20 +105,10 @@ function parseFacebook(json: unknown): Found[] {
   return out;
 }
 
-// ---------- Pinterest board RSS ----------
+// ---------- Pinterest board RSS (shared with the scheduled sync) ----------
 async function parsePinterestBoard(boardUrl: string): Promise<Found[]> {
-  const u = new URL(boardUrl); u.search = ""; u.pathname = u.pathname.replace(/\/$/, "") + ".rss";
-  const r = await fetch(u, { headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 Chrome/124 Safari/537.36" } });
-  if (!r.ok) throw new Error(`board RSS ${r.status}: ${u}`);
-  const xml = await r.text();
-  const board = xml.match(/<channel>[\s\S]*?<title>([^<]*)<\/title>/)?.[1]?.trim();
-  const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((m) => m[1]);
-  return items.map((it) => ({
-    url: it.match(/<link>([^<]+)<\/link>/)?.[1]?.trim() ?? "",
-    savedAt: toDate(it.match(/<pubDate>([^<]+)<\/pubDate>/)?.[1]),
-    note: it.match(/<title>([^<]*)<\/title>/)?.[1]?.replace(/<!\[CDATA\[|\]\]>/g, "").trim() || undefined,
-    platform: "pinterest", collection: board ? `Pinterest: ${board}` : "Pinterest",
-  })).filter((f) => f.url);
+  const { items } = await fetchPinterestBoard(boardUrl);
+  return items.map((i) => ({ url: i.url, savedAt: i.savedAt, note: i.note, collection: i.collection, platform: "pinterest" }));
 }
 
 // ---------- generic fallback: any link to a known platform in any text file ----------

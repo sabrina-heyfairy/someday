@@ -96,6 +96,15 @@ Instagram collections and Pinterest boards become Someday collections. Any other
 
 **5. Desktop.** The `/add` page, or `npm run ingest:url -- <url>`. On Android and desktop Chrome the installed app also registers as a share target, so "Share → Someday" lands on `/add` prefilled.
 
+## Sources that sync on their own
+
+`/sources` lists what Someday pulls automatically, every `SYNC_INTERVAL_HOURS` (default 24) while the app runs, plus a Sync now button. Two kinds:
+
+- **Pinterest boards.** Paste any public board URL; each board becomes a collection and new pins arrive on the schedule.
+- **Reddit saved posts and comments.** One-time setup: create an app at reddit.com/prefs/apps (type *web app*, redirect URI `https://YOUR-APP/api/reddit/callback`), set `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET` and `APP_URL`, redeploy, then tap Connect Reddit. Someday keeps a refresh token and reads `/user/you/saved`.
+
+Instagram, TikTok and Facebook have no API for saved posts, and scraping a logged-in session gets accounts flagged, so they are deliberately not here. Use the Shortcut for new saves and `npm run import` with their data exports for the backlog. `POST /api/sync?token=…` triggers a run from an external cron if you prefer that to the in-app timer.
+
 ## Fixing what the AI got wrong
 
 Tap **Select** on the grid, tick cards, and the bar at the bottom tags, files into a collection, moves to the to-make board, stars, or archives them all at once. On an item page, open **Tags · edit** to retype its tags, category and action. `/tags` lists every tag with counts; rename one there and it changes everywhere (renaming onto an existing tag merges them; clearing the name deletes it).
@@ -127,6 +136,7 @@ Open the site in Safari, tap Share → **Add to Home Screen**. It installs as a 
 | `npm run ingest:url -- <url> [note]` | Save one link from the terminal |
 | `npm run shortcut -- <host> <token>` | Build and sign the Save to Someday iOS Shortcut |
 | `POST /api/process?token=…&limit=5` | Cron-friendly processing endpoint |
+| `POST /api/sync?token=…` | Run all scheduled sources now |
 | `GET /api/items?token=…&q=…` | JSON search, for a future native app or Shortcut |
 
 ## Deploying

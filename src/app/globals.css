@@ -16,3 +16,9 @@ body { background: var(--bg); color: var(--fg); font-family: ui-sans-serif, -app
 .muted { color: var(--muted); }
 .chip { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 2px 10px; font-size: 12px; white-space: nowrap; }
 .chip.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.shelf { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 6px 12px; font-size: 13px; font-weight: 500; white-space: nowrap; display: inline-flex; gap: 6px; align-items: baseline; }
+.shelf .n { color: var(--muted); font-weight: 400; font-size: 11px; }
+.shelf.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.shelf.on .n { color: var(--bg); opacity: .7; }
+details > summary { list-style: none; }
+details > summary::-webkit-details-marker { display: none; }

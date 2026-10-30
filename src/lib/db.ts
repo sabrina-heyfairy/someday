@@ -54,6 +54,7 @@ export type Item = {
   duplicate_of: string | null;
   stage: "want" | "fabric" | "in_progress" | "done" | null;
   stage_changed_at: string | null;
+  shelves?: string[];
 };
 
 export const CATEGORIES = ["garment", "pattern", "technique", "tutorial", "fabric", "product", "inspiration", "other"] as const;

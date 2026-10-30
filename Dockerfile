@@ -29,4 +29,4 @@ RUN mkdir -p /data/media
 EXPOSE 3000
 # Apply migrations, upsert the sewing tips archive, start the source scheduler, serve. A minute later, one low-priority worker
 # fetches missing previews (three parallel yt-dlp runs starve the web process on a 1 GB machine and fail the health check).
-CMD ["sh", "-c", "npx tsx scripts/migrate.ts && npx tsx scripts/import-sewing-tips.ts && (sleep 60 && PREVIEW_CONCURRENCY=1 nice -n 15 npx tsx scripts/backfill-previews.ts &) && (npx tsx scripts/scheduler.ts &) && exec npx next start -p ${PORT}"]
+CMD ["sh", "-c", "npx tsx scripts/migrate.ts && npx tsx scripts/import-sewing-tips.ts && npx tsx scripts/shelve.ts && (sleep 60 && PREVIEW_CONCURRENCY=1 nice -n 15 npx tsx scripts/backfill-previews.ts &) && (npx tsx scripts/scheduler.ts &) && exec npx next start -p ${PORT}"]

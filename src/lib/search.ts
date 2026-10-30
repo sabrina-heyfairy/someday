@@ -1,7 +1,7 @@
 import { embedQuery } from "./ai";
 import { sql, type Item } from "./db";
 
-export type Filters = { q?: string; category?: string; source?: string; action?: string; tag?: string; status?: string; starred?: boolean; limit?: number };
+export type Filters = { q?: string; shelf?: string; unshelved?: boolean; source?: string; action?: string; tag?: string; status?: string; starred?: boolean; limit?: number };
 
 let vectorReady: boolean | null = null;
 async function hasVector() {
@@ -9,14 +9,21 @@ async function hasVector() {
   return vectorReady;
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Every item comes back with `shelves`: the names of the shelves it sits on, in shelf order.
 export async function searchItems(f: Filters): Promise<Item[]> {
   const limit = f.limit ?? 60;
   const q = f.q?.trim();
   const vec = q && (await hasVector()) ? await embedQuery(q) : null;
+  const shelf = f.shelf && UUID.test(f.shelf) ? f.shelf : undefined;
   return sql<Item[]>`
-    select * from items
+    select items.*,
+      coalesce((select array_agg(c.name order by c.position, c.name) from collection_items ci join collections c on c.id = ci.collection_id where ci.item_id = items.id and c.is_shelf), '{}') as shelves
+    from items
     where archived = false and duplicate_of is null
-      ${f.category ? sql`and category = ${f.category}` : sql``}
+      ${shelf ? sql`and exists (select 1 from collection_items ci where ci.item_id = items.id and ci.collection_id = ${shelf})` : sql``}
+      ${f.unshelved ? sql`and not exists (select 1 from collection_items ci join collections c on c.id = ci.collection_id where ci.item_id = items.id and c.is_shelf)` : sql``}
       ${f.source ? sql`and source = ${f.source}` : sql``}
       ${f.action ? sql`and action = ${f.action}` : sql``}
       ${f.tag ? sql`and ${f.tag} = any(tags)` : sql``}
@@ -39,12 +46,17 @@ export async function spend() {
   return { total: Number(row.total), month: Number(row.this_month), calls: row.calls };
 }
 
+export type Shelf = { id: string; name: string; position: number; n: number };
+
 export async function facets() {
-  const [cats, srcs, tags, counts] = await Promise.all([
-    sql<{ category: string; n: number }[]>`select category, count(*)::int n from items where archived = false and duplicate_of is null and category is not null group by 1 order by 2 desc`,
-    sql<{ source: string; n: number }[]>`select source, count(*)::int n from items where archived = false and duplicate_of is null group by 1 order by 2 desc`,
-    sql<{ tag: string; n: number }[]>`select t tag, count(*)::int n from items, unnest(tags) t where archived = false and duplicate_of is null group by 1 order by 2 desc limit 30`,
-    sql<{ status: string; n: number }[]>`select status, count(*)::int n from items where archived = false and duplicate_of is null group by 1`,
+  const live = sql`archived = false and duplicate_of is null`;
+  const [shelves, unshelved, srcs, tags, counts] = await Promise.all([
+    sql<Shelf[]>`select c.id, c.name, c.position, (select count(*)::int from collection_items ci join items i on i.id = ci.item_id where ci.collection_id = c.id and i.archived = false and i.duplicate_of is null) n
+                 from collections c where c.is_shelf order by c.position, c.name`,
+    sql<{ n: number }[]>`select count(*)::int n from items where ${live} and not exists (select 1 from collection_items ci join collections c on c.id = ci.collection_id where ci.item_id = items.id and c.is_shelf)`,
+    sql<{ source: string; n: number }[]>`select source, count(*)::int n from items where ${live} group by 1 order by 2 desc`,
+    sql<{ tag: string; n: number }[]>`select t tag, count(*)::int n from items, unnest(tags) t where ${live} and t not in ('sewing-tip','has-howto','link-only','note-only') group by 1 order by 2 desc limit 24`,
+    sql<{ status: string; n: number }[]>`select status, count(*)::int n from items where ${live} group by 1`,
   ]);
-  return { cats, srcs, tags, counts };
+  return { shelves, unshelved: unshelved[0]?.n ?? 0, srcs, tags, counts };
 }

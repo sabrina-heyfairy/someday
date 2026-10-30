@@ -8,3 +8,4 @@ osxphotos_crash.log
 dist/
 .deploy-password.txt
 .deploy-token.txt
+.claude/

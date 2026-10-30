@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { sql } from "@/lib/db";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,20 +15,24 @@ export const viewport: Viewport = {
   themeColor: [{ media: "(prefers-color-scheme: light)", color: "#faf7f2" }, { media: "(prefers-color-scheme: dark)", color: "#171412" }],
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+// Items still being processed show as a small badge on Saved instead of their own nav entry.
+async function pendingCount() {
+  try { const [r] = await sql<{ n: number }[]>`select count(*)::int n from items where status in ('queued','processing') and archived = false`; return r?.n ?? 0; } catch { return 0; }
+}
+
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const pending = await pendingCount();
   return (
     <html lang="en">
       <body className="min-h-screen">
         <header className="sticky top-0 z-10 backdrop-blur border-b" style={{ borderColor: "var(--line)", background: "color-mix(in srgb, var(--bg) 85%, transparent)" }}>
           <div className="mx-auto max-w-6xl px-4 h-12 flex items-center justify-between" style={{ paddingTop: "env(safe-area-inset-top)" }}>
             <Link href="/" className="font-semibold tracking-tight">Someday</Link>
-            <nav className="flex gap-4 text-sm muted">
-              <Link href="/tips">Tips</Link>
-              <Link href="/collections">Collections</Link>
+            <nav className="flex gap-4 text-sm muted items-center">
+              <span className="flex items-center gap-1"><Link href="/">Saved</Link>{pending > 0 && <Link href="/?status=queued" className="rounded-full px-1.5 text-[10px] text-white" style={{ background: "var(--accent)" }} title={`${pending} still processing`}>{pending}</Link>}</span>
+              <Link href="/collections">Shelves</Link>
               <Link href="/make">To make</Link>
-              <Link href="/sources">Sources</Link>
-              <Link href="/?status=queued">Queue</Link>
-              <Link href="/add">Add</Link>
+              <Link href="/add" className="chip on">Add</Link>
             </nav>
           </div>
         </header>

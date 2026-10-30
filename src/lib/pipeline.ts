@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { embed, extract, transcribe } from "./ai";
 import { sql, type Item } from "./db";
 import { dhash, download, extractAudio, fetchPreview, itemDir, keyframes, MEDIA_DIR, pageInfo, rel, tiktokEmbedInfo, toJpeg, ytCreator, ytDownload, ytMeta } from "./media";
+import { suggestShelf } from "./shelves";
 import { ensureLocal, syncItemDir } from "./storage";
 
 // Claim up to `limit` queued items and process them one at a time.
@@ -103,6 +104,11 @@ export async function processItem(id: string) {
     media = ${sql.json(media as never)}, meta = ${sql.json(meta as never)}
     ${vec ? sql`, embedding = ${JSON.stringify(vec)}` : sql``}
     where id = ${id}`;
+
+  // 3b. Suggest a shelf. Only when the item is not on one already, so a hand placement is never overridden.
+  const shelf = suggestShelf({ category: ex.category, garments: ex.garments, title: ex.title, tags: ex.tags });
+  if (shelf) await sql`insert into collection_items (collection_id, item_id) select c.id, ${id}::uuid from collections c where c.name = ${shelf} and c.is_shelf
+    and not exists (select 1 from collection_items ci join collections c2 on c2.id = ci.collection_id where ci.item_id = ${id} and c2.is_shelf) on conflict do nothing`;
 
   // 4. Mirror media to object storage when configured (no-op locally).
   await syncItemDir(id);

@@ -25,7 +25,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
   const dups = await sql<Item[]>`select * from items where duplicate_of = ${id} order by created_at`;
   const collections = await sql<{ id: string; name: string; member: boolean }[]>`
     select c.id, c.name, exists(select 1 from collection_items ci where ci.collection_id = c.id and ci.item_id = ${id}) member
-    from collections c order by member desc, c.name`;
+    from collections c where c.is_shelf or exists(select 1 from collection_items ci where ci.collection_id = c.id and ci.item_id = ${id}) order by member desc, c.position, c.name`;
   const m = (p?: string) => (p ? `/api/media/${p}` : null);
 
   return (
@@ -74,7 +74,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           </div>
         </Block>
 
-        <Block label="Collections">
+        <Block label="Shelves">
           <div className="flex flex-wrap gap-1 items-center">
             {collections.map((c) => (
               <form key={c.id} action={toggleMembership}>
@@ -84,7 +84,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
             ))}
             <form action={createCollection} className="flex gap-1">
               <input type="hidden" name="item_id" value={id} />
-              <input name="name" placeholder="New collection…" className="card rounded-full px-3 py-0.5 text-xs w-36" />
+              <input name="name" placeholder="New shelf…" className="card rounded-full px-3 py-0.5 text-xs w-36" />
               <button className="chip">Add</button>
             </form>
           </div>

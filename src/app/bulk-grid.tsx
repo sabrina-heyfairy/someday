@@ -50,8 +50,8 @@ export function BulkGrid({ items, collections }: { items: Item[]; collections: C
             </form>
             <form action={async (fd) => { await bulk(fd); done(); }} className="flex gap-1">
               <input type="hidden" name="ids" value={idsJson} /><input type="hidden" name="op" value="collection" />
-              <select name="value" className="card rounded-full px-2 py-1 text-xs"><option value="">collection…</option>{collections.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
-              <input name="new_name" placeholder="or new" className="card rounded-full px-3 py-1 text-xs w-24" />
+              <select name="value" className="card rounded-full px-2 py-1 text-xs"><option value="">shelf…</option>{collections.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
+              <input name="new_name" placeholder="or new shelf" className="card rounded-full px-3 py-1 text-xs w-24" />
               <button className="chip on">Add</button>
             </form>
             <form action={async (fd) => { await bulk(fd); done(); }} className="flex gap-1">

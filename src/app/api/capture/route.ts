@@ -6,6 +6,7 @@ import { download } from "@/lib/media";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { readFileSync } from "node:fs";
+import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -22,6 +23,8 @@ export async function POST(req: Request) {
   let c: Capture;
   if (isTwilio) {
     const form = await req.formData();
+    // Twilio signs each webhook: HMAC-SHA1(auth token, public URL + sorted POST params). Reject anything that doesn't verify.
+    if (!twilioSignatureValid(req, form)) return NextResponse.json({ error: "bad twilio signature" }, { status: 403 });
     const from = String(form.get("From") ?? "");
     const body = String(form.get("Body") ?? "");
     const n = Number(form.get("NumMedia") ?? 0);
@@ -76,3 +79,18 @@ export async function POST(req: Request) {
 }
 
 const str = (v: FormDataEntryValue | null) => (typeof v === "string" && v.trim() ? v.trim() : null);
+
+function twilioSignatureValid(req: Request, form: FormData): boolean {
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  if (!token) return process.env.TWILIO_ALLOW_UNSIGNED === "1"; // dev only: curl-faked webhooks
+  const sig = req.headers.get("x-twilio-signature") ?? "";
+  // Twilio signs the URL it was configured with; behind a proxy (Fly) rebuild it from forwarded headers.
+  const proto = req.headers.get("x-forwarded-proto") ?? new URL(req.url).protocol.replace(":", "");
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? new URL(req.url).host;
+  const url = `${proto}://${host}${new URL(req.url).pathname}${new URL(req.url).search}`;
+  const params = [...form.entries()].filter((e): e is [string, string] => typeof e[1] === "string").sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  const payload = url + params.map(([k, v]) => k + v).join("");
+  const expected = createHmac("sha1", token).update(payload).digest("base64");
+  const a = Buffer.from(sig), b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}

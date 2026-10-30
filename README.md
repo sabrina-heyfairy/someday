@@ -50,7 +50,9 @@ npm run dev                       # http://localhost:3000
 npm run shortcut -- https://YOUR-HOST YOUR_CAPTURE_TOKEN
 ```
 
-That writes `Save to Someday.shortcut`, signed so iOS accepts it. Signing needs a Mac that is signed into iCloud (no developer account). It pulls links and images out of whatever you share, sends them as JSON to `/api/capture`, and pops a "Saved ✨" notification. Open the file on the Mac or AirDrop it; iOS shows an Add Shortcut screen.
+That writes `Save to Someday.shortcut`, signed so iOS accepts it. Signing needs a Mac that is signed into iCloud (no developer account). It detects every URL and every image in the share, converts photos to JPEG, and **POSTs each one separately** to `/api/capture` (a single giant multi-photo body OOMs the server), then pops a "Saved ✨" notification. Open the file on the Mac or AirDrop it; iOS shows an Add Shortcut screen.
+
+If you already installed an older Shortcut that batched images into one request, regenerate and re-AirDrop it after deploying the multi-capture fix.
 
 Or build it by hand in the Shortcuts app:
 

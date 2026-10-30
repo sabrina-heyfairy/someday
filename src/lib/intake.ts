@@ -67,13 +67,29 @@ export async function intake(c: Capture): Promise<{ id: string; duplicate: boole
     }
   }
 
-  const [row] = await sql`
-    insert into items (source, kind, channel, url, canonical_url, url_hash, image_hash, phash, raw_text, meta, created_at)
-    values (${source}, ${kind}, ${c.channel}, ${url}, ${canonical}, ${urlHash}, ${imageHash}, ${phash ? sql`${phash}::bit(64)` : null}, ${text}, ${sql.json((c.meta ?? {}) as never)}, ${c.createdAt ?? new Date()})
-    returning id`;
+  try {
+    const [row] = await sql`
+      insert into items (source, kind, channel, url, canonical_url, url_hash, image_hash, phash, raw_text, meta, created_at)
+      values (${source}, ${kind}, ${c.channel}, ${url}, ${canonical}, ${urlHash}, ${imageHash}, ${phash ? sql`${phash}::bit(64)` : null}, ${text}, ${sql.json((c.meta ?? {}) as never)}, ${c.createdAt ?? new Date()})
+      returning id`;
 
-  if (c.image) await saveOriginal(row.id, c.image);
-  return { id: row.id, duplicate: false };
+    if (c.image) await saveOriginal(row.id, c.image);
+    return { id: row.id, duplicate: false };
+  } catch (e) {
+    // Parallel Shortcut POSTs of the same bytes can race past the pre-insert SELECT and hit the unique index.
+    const code = (e as { code?: string })?.code;
+    if (code === "23505") {
+      if (imageHash) {
+        const [dup] = await sql<{ id: string }[]>`select id from items where image_hash = ${imageHash} limit 1`;
+        if (dup) return { id: dup.id, duplicate: true };
+      }
+      if (urlHash) {
+        const [dup] = await sql<{ id: string }[]>`select id from items where url_hash = ${urlHash} limit 1`;
+        if (dup) return { id: dup.id, duplicate: true };
+      }
+    }
+    throw e;
+  }
 }
 
 async function saveOriginal(id: string, image: { buffer: Buffer; filename?: string }) {

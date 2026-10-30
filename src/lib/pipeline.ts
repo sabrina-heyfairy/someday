@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { embed, extract, transcribe } from "./ai";
 import { sql, type Item } from "./db";
 import { dhash, download, extractAudio, fetchPreview, itemDir, keyframes, MEDIA_DIR, pageInfo, rel, tiktokEmbedInfo, toJpeg, ytCreator, ytDownload, ytMeta } from "./media";
-import { suggestShelf } from "./shelves";
+import { pickShelf } from "./shelves";
 import { ensureLocal, syncItemDir } from "./storage";
 
 // Claim up to `limit` queued items and process them one at a time.
@@ -90,14 +90,15 @@ export async function processItem(id: string) {
 
   // 3. Understand it
   const tier = item.channel === "folder" || item.channel === "photos" || item.channel === "import" ? "bulk" : "live";
-  const ex = await extract({ itemId: id, tier, url: item.url, source: item.source, rawText: item.raw_text, pageText, transcript, imagePaths: images, metaTitle, metaCreator });
+  const shelfNames = (await sql<{ name: string }[]>`select name from collections where is_shelf order by position, name`).map((r) => r.name);
+  const ex = await extract({ itemId: id, tier, url: item.url, source: item.source, rawText: item.raw_text, pageText, transcript, imagePaths: images, metaTitle, metaCreator, shelves: shelfNames });
   const embedText = [ex.title, ex.summary, ex.tags.join(" "), ex.garments.join(" "), ex.techniques.join(" "), ex.fabrics.join(" "), ex.ocr_text, item.raw_text, transcript?.slice(0, 4000)].filter(Boolean).join("\n");
   const vec = await embed(embedText, id);
 
   await sql`update items set
     status = 'done', error = null, processed_at = now(), kind = ${kind},
     title = ${ex.title}, creator = ${ex.creator ?? metaCreator}, summary = ${ex.summary},
-    category = ${ex.category}, action = ${ex.action}, tags = ${ex.tags}, garments = ${ex.garments},
+    category = ${ex.category}, topic = ${ex.topic}, action = ${ex.action}, tags = ${ex.tags}, garments = ${ex.garments},
     techniques = ${ex.techniques}, fabrics = ${ex.fabrics}, colors = ${ex.colors},
     patterns = ${sql.json(ex.patterns as never)}, products = ${sql.json(ex.products as never)}, steps = ${ex.steps},
     transcript = ${transcript}, ocr_text = ${ex.ocr_text},
@@ -106,7 +107,7 @@ export async function processItem(id: string) {
     where id = ${id}`;
 
   // 3b. Suggest a shelf. Only when the item is not on one already, so a hand placement is never overridden.
-  const shelf = suggestShelf({ category: ex.category, garments: ex.garments, title: ex.title, tags: ex.tags });
+  const shelf = pickShelf({ shelf: ex.shelf, topic: ex.topic, category: ex.category, action: ex.action, garments: ex.garments, title: ex.title, tags: ex.tags }, shelfNames);
   if (shelf) await sql`insert into collection_items (collection_id, item_id) select c.id, ${id}::uuid from collections c where c.name = ${shelf} and c.is_shelf
     and not exists (select 1 from collection_items ci join collections c2 on c2.id = ci.collection_id where ci.item_id = ${id} and c2.is_shelf) on conflict do nothing`;
 

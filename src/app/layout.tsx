@@ -31,7 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <nav className="flex gap-4 text-sm muted items-center">
               <span className="flex items-center gap-1"><Link href="/">Saved</Link>{pending > 0 && <Link href="/?status=queued" className="rounded-full px-1.5 text-[10px] text-white" style={{ background: "var(--accent)" }} title={`${pending} still processing`}>{pending}</Link>}</span>
               <Link href="/collections">Shelves</Link>
-              <Link href="/make">To make</Link>
+              <Link href="/make">Projects</Link>
               <Link href="/add" className="chip on">Add</Link>
             </nav>
           </div>

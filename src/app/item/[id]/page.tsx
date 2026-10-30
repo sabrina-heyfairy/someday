@@ -43,7 +43,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
         <div className="flex items-start gap-3">
           <div className="flex-1">
             <div className="text-xs muted">
-              {String(item.meta?.archive_source ?? item.source)} · {String(item.meta?.archive_category ?? item.category ?? "unsorted")} · {item.action ?? ""}
+              {String(item.meta?.archive_source ?? item.source)} · {String(item.topic ?? item.meta?.archive_category ?? item.category ?? "")} · {item.action ?? ""}
               {item.creator && <>· by {item.creator}</>}
               {typeof item.meta?.archive_status === "string" && <> · archive: {item.meta.archive_status}</>}
             </div>
@@ -62,7 +62,7 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           </div>
         )}
 
-        <Block label="To-make board">
+        <Block label="Projects">
           <div className="flex flex-wrap gap-1">
             {STAGES.map((s) => (
               <form key={s.key} action={setStage}>

@@ -21,8 +21,8 @@ export default async function MakeBoard() {
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-        <h1 className="text-lg font-semibold">To make</h1>
-        <p className="text-xs muted">{rows.length} projects · anything the AI tagged “make” lands in the first column; add others from their page.</p>
+        <h1 className="text-lg font-semibold">Projects</h1>
+        <p className="text-xs muted">{rows.length} projects · anything you saved to make or cook lands in the first column; add others from their page.</p>
       </div>
       <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 pb-4 lg:grid lg:grid-cols-4 lg:overflow-visible lg:mx-0 lg:px-0">
         {STAGES.map((s, i) => {

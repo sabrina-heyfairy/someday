@@ -1,6 +1,6 @@
 export const STAGES = [
-  { key: "want", label: "Want to make", hint: "Saved it, meaning to make it" },
-  { key: "fabric", label: "Fabric bought", hint: "Materials in hand, not started" },
+  { key: "want", label: "Want to do", hint: "Saved it, meaning to make or try it" },
+  { key: "fabric", label: "Materials ready", hint: "Everything in hand, not started" },
   { key: "in_progress", label: "In progress", hint: "On the table right now" },
   { key: "done", label: "Done", hint: "Made it" },
 ] as const;

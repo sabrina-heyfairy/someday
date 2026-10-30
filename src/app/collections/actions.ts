@@ -52,3 +52,19 @@ export async function updateShelf(fd: FormData) {
   if (name) await sql`update collections set name = ${name}, description = ${description}, position = ${position}, is_shelf = ${isShelf} where id = ${id}`;
   revalidatePath("/collections"); revalidatePath("/");
 }
+
+// Unsorted view: "Make a Cooking shelf" creates the shelf and moves every unsorted item with that topic onto it.
+export async function createShelfFromTopic(fd: FormData) {
+  await requireSession();
+  const topic = clean(fd.get("topic")).toLowerCase();
+  if (!topic) return;
+  const name = topic.charAt(0).toUpperCase() + topic.slice(1);
+  const [c] = await sql<{ id: string }[]>`insert into collections (name) values (${name}) on conflict (name) do update set name = excluded.name, is_shelf = true returning id`;
+  await sql`insert into collection_items (collection_id, item_id)
+    select ${c.id}::uuid, i.id from items i
+    where i.archived = false and i.duplicate_of is null and coalesce(i.topic, 'other') = ${topic}
+      and not exists (select 1 from collection_items ci join collections c2 on c2.id = ci.collection_id where ci.item_id = i.id and c2.is_shelf)
+    on conflict do nothing`;
+  revalidatePath("/"); revalidatePath("/collections");
+  redirect(`/?shelf=${c.id}`);
+}

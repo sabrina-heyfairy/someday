@@ -4,6 +4,7 @@ import { sql } from "@/lib/db";
 import { HAS_AI_CREDS } from "@/lib/ai";
 import { BulkGrid } from "./bulk-grid";
 import { requireSession } from "@/lib/require-session";
+import { createShelfFromTopic } from "./collections/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +15,13 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
   await requireSession("/");
   const sp = await searchParams;
   const unshelved = sp.shelf === "none";
-  const [items, f, ai, collections] = await Promise.all([
+  const [items, f, ai, collections, topics] = await Promise.all([
     searchItems({ q: sp.q, shelf: unshelved ? undefined : sp.shelf, unshelved, source: sp.source, tag: sp.tag, status: sp.status, action: sp.action, starred: sp.starred === "1" }),
     facets(),
     spend(),
     sql<{ id: string; name: string }[]>`select id, name from collections where is_shelf order by position, name`,
+    unshelved ? sql<{ topic: string; n: number }[]>`select coalesce(topic, 'other') topic, count(*)::int n from items i where archived = false and duplicate_of is null
+      and not exists (select 1 from collection_items ci join collections c on c.id = ci.collection_id where ci.item_id = i.id and c.is_shelf) group by 1 order by 2 desc` : Promise.resolve([] as { topic: string; n: number }[]),
   ]);
   const total = f.counts.reduce((a, c) => a + c.n, 0);
   const pending = f.counts.filter((c) => c.status !== "done").reduce((a, c) => a + c.n, 0);
@@ -80,9 +83,18 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
         <span className="muted ml-auto">{items.length}{items.length === 60 ? "+" : ""} {current ? `on ${current.name}` : unshelved ? "unsorted" : "saved"}</span>
       </div>
 
+      {unshelved && topics.length > 0 && (
+        <div className="card rounded-2xl p-3 flex flex-wrap items-center gap-2 text-xs">
+          <span className="muted">Nothing fits a shelf yet. Make one:</span>
+          {topics.map((t) => (
+            <form key={t.topic} action={createShelfFromTopic}><input type="hidden" name="topic" value={t.topic} /><button className="chip">{t.topic.charAt(0).toUpperCase() + t.topic.slice(1)} shelf · {t.n}</button></form>
+          ))}
+        </div>
+      )}
+
       {items.length === 0 ? (
         <div className="card rounded-2xl p-10 text-center muted">
-          {total === 0 ? <>Nothing saved yet. Share a link to <code>/api/capture</code> or run <code>npm run ingest:folder ~/Desktop/screenshots</code>.</> : "No matches. Try fewer words or clear a filter."}
+          {total === 0 ? <>Nothing saved yet. Share a link or a screenshot from your phone with the Shortcut, or tap Add.</> : "No matches. Try fewer words or clear a filter."}
         </div>
       ) : (
         <BulkGrid items={items} collections={collections} />

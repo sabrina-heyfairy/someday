@@ -39,9 +39,10 @@ export type ExtractInput = {
   imagePaths: string[];         // keyframes / screenshot (jpeg)
   metaTitle?: string | null;
   metaCreator?: string | null;
+  shelves?: string[];          // the user's shelf names, so the model can pick one
 };
 
-const SYSTEM = `You catalog things a home sewist saves from social media and the web: clothes they like, sewing patterns, techniques, tutorials, fabric, products, and general inspiration. You are given whatever could be recovered: a link, caption, page text, a transcript of the video's audio, and still frames or a screenshot. Read on-screen text carefully (it often carries the pattern name, measurements, or product). Be specific and concrete. Never invent a pattern or brand that is not in the material; leave arrays empty when unsure. Respond with ONLY a JSON object in this exact shape:\n${EXTRACTION_JSON_SHAPE}`;
+const SYSTEM = `You catalog things one person saves from social media, shops and the web so they can find them again: clothes they like, products to buy, outfit and home inspiration, recipes, how-tos, sewing patterns and techniques, places, articles. You are given whatever could be recovered: a link, caption, page text, a transcript of the video audio, and still frames or a screenshot. Read on-screen text carefully (it often carries the brand, price, pattern name or measurements). Decide first what kind of save this is: a product for sale (name brand, item, price, shop), an inspiration picture (describe what is shown, colors, style, so a later search finds it), a how-to, or reference. Be specific and concrete. Never invent a brand, price or pattern that is not in the material; leave arrays empty when unsure. Pick the shelf from the list the user gives, copied exactly, or null. Respond with ONLY a JSON object in this exact shape:\n${EXTRACTION_JSON_SHAPE}`;
 
 export async function extract(input: ExtractInput): Promise<Extraction> {
   if (MOCK) return mockExtract(input);
@@ -61,6 +62,7 @@ export async function extract(input: ExtractInput): Promise<Extraction> {
     input.pageText && `Page text:\n${input.pageText.slice(0, 6000)}`,
     input.transcript && `Audio transcript:\n${input.transcript.slice(0, 8000)}`,
     `${input.imagePaths.length} image(s) attached (video keyframes in order, or the saved screenshot).`,
+    input.shelves?.length ? `The user's shelves (pick one for "shelf", copied exactly, or null): ${input.shelves.join(" | ")}` : null,
   ].filter(Boolean).join("\n\n");
   content.push({ type: "text", text: parts });
 
@@ -126,12 +128,15 @@ function mockExtract(input: ExtractInput): Extraction {
   const techniques = pick(["bias", "french seam", "zipper", "buttonhole", "hem", "gather", "pleat", "dart", "smocking", "topstitch", "binding"]);
   const fabrics = pick(["linen", "cotton", "silk", "wool", "denim", "jersey", "gauze", "viscose", "rayon"]);
   const isHowTo = /how to|tutorial|step|tip/.test(text);
-  const category = techniques.length && isHowTo ? "tutorial" : garments.length ? "garment" : fabrics.length ? "fabric" : input.imagePaths.length ? "inspiration" : "other";
+  const isShop = /\$\d|price|shop|buy|add to cart/.test(text);
+  const category = isHowTo ? "howto" : isShop ? "product" : garments.length || input.imagePaths.length ? "inspiration" : "other";
+  const topic = techniques.length || fabrics.length ? "sewing" : garments.length ? "fashion" : "other";
+  const shelfName = input.shelves?.find((s) => (topic === "sewing" && s === "Techniques") || (topic === "fashion" && s === "Wardrobe")) ?? null;
   return Extraction.parse({
     title: (input.metaTitle || input.rawText || input.url || "Saved item").slice(0, 100),
     summary: `[mock] ${category} saved from ${input.source}${input.imagePaths.length ? ` with ${input.imagePaths.length} image(s)` : ""}.`,
-    category,
-    action: category === "tutorial" ? "learn" : category === "garment" ? "make" : "inspo",
+    category, topic, shelf: shelfName,
+    action: category === "howto" ? "learn" : category === "product" ? "buy" : "inspo",
     tags: Array.from(new Set([input.source, ...garments, ...techniques, ...fabrics])).slice(0, 8),
     garments, techniques, fabrics, colors: [], patterns: [], products: [],
     steps: isHowTo ? ["[mock] steps would be extracted here"] : [],

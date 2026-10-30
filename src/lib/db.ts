@@ -34,6 +34,7 @@ export type Item = {
   creator: string | null;
   summary: string | null;
   category: string | null;
+  topic: string | null;
   action: string | null;
   tags: string[];
   garments: string[];
@@ -57,6 +58,6 @@ export type Item = {
   shelves?: string[];
 };
 
-export const CATEGORIES = ["garment", "pattern", "technique", "tutorial", "fabric", "product", "inspiration", "other"] as const;
+export const CATEGORIES = ["product", "inspiration", "howto", "pattern", "recipe", "place", "article", "other"] as const;
 export const ACTIONS = ["make", "buy", "learn", "inspo", "reference"] as const;
 export const SOURCES = ["instagram", "tiktok", "facebook", "reddit", "youtube", "pinterest", "web", "screenshot", "photo", "text", "note"] as const;

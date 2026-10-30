@@ -1,5 +1,6 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { join, normalize } from "node:path";
+import { Readable } from "node:stream";
 import { MEDIA_DIR } from "@/lib/media";
 import { BACKEND, contentType, signedUrl } from "@/lib/storage";
 import { cookies } from "next/headers";
@@ -14,8 +15,18 @@ export async function GET(_req: Request, ctx: { params: Promise<{ path: string[]
   const abs = normalize(join(MEDIA_DIR, rel));
   if (abs.startsWith(MEDIA_DIR) && existsSync(abs)) {
     const size = statSync(abs).size;
-    const stream = createReadStream(abs);
-    return new Response(stream as unknown as ReadableStream, { headers: { "Content-Type": contentType(abs), "Content-Length": String(size), "Cache-Control": "private, max-age=31536000" } });
+    const nodeStream = createReadStream(abs);
+    nodeStream.on("error", (e) => console.error("[media] read error", rel, e.message));
+    // Proper Node→Web conversion; casting createReadStream as ReadableStream caused
+    // "ReadableStream is already closed" uncaughtExceptions when clients disconnected.
+    const web = Readable.toWeb(nodeStream) as ReadableStream<Uint8Array>;
+    return new Response(web, {
+      headers: {
+        "Content-Type": contentType(abs),
+        "Content-Length": String(size),
+        "Cache-Control": "private, max-age=31536000",
+      },
+    });
   }
   if (BACKEND === "supabase") {
     const url = await signedUrl(rel);

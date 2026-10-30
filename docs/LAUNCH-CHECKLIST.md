@@ -20,7 +20,18 @@ Legend: `[x]` done · `[ ]` still needs the owner (accounts, phone, secrets, exp
 ## 2. Deploy (done 2026-10-30)
 Live at https://someday-stash.fly.dev. Web password is in `.deploy-password.txt`, capture token in `.deploy-token.txt` (both gitignored, on this Mac only). Database is the Fly Postgres app `someday-stash-pg` (PG 17). Two leftovers to delete when convenient: `someday-guhxxa` (an earlier `fly launch` in Amsterdam) and `someday-stash-db` (PG 18, no pgvector). `fly apps destroy <name>`.
 
-**(in repo)** Deploy script is portable (macOS + Linux `sed`), copies `content/` into the image, and runs `npm run import:tips` on boot so the sewing tips archive is upserted after migrations.
+**(in repo)** Deploy script is portable (macOS + Linux `sed`), copies `content/` into the image, and runs `npm run import:tips` on boot so the sewing tips archive is upserted after migrations. `fly.toml` keeps `auto_stop_machines = "off"`, `min_machines_running = 1`, **2gb RAM**, and `restart.policy = always` so a multi-photo share cannot leave the app with “no started VMs”.
+
+### 2c. After the multi-photo crash fix (owner)
+```bash
+cd ~/Documents/someday && git pull
+npm run deploy
+# If the machine is still on 1gb after deploy:
+fly scale memory 2048 --app someday-stash
+fly status --app someday-stash   # confirm memory 2048, 1 machine started
+curl -fsS https://someday-stash.fly.dev/api/health
+```
+Then regenerate and reinstall the Shortcut (section 4) — the old one must not be used.
 
 ## 2b. Deploy from scratch (if ever needed)
 - [ ] Make sure `ANTHROPIC_API_KEY` is in `~/Documents/someday/.env.local` (it is).
@@ -44,15 +55,18 @@ Live at https://someday-stash.fly.dev. Web password is in `.deploy-password.txt`
   ```
 
 ## 4. Phone: Shortcut + home screen
-- [ ] On a Mac signed into iCloud (personal Mac, or sign this one in):
+- [ ] **Regenerate the Shortcut after the multi-photo capture fix** (older builds POST every selected photo in one body and crash the Fly VM). On a Mac signed into iCloud:
   ```bash
-  cd ~/Documents/someday && npm run shortcut -- https://someday-stash.fly.dev YOUR_CAPTURE_TOKEN
+  cd ~/Documents/someday && git pull
+  TOKEN=$(fly ssh console --app someday-stash -C 'printenv CAPTURE_TOKEN' 2>/dev/null | tail -1)
+  npm run shortcut -- https://someday-stash.fly.dev "$TOKEN"
   ```
-  Produces `Save to Someday.shortcut`. AirDrop it to your iPhone → Add Shortcut.
-  No iCloud Mac available? Build it by hand with the recipe in README → "Ways to save".
-  Capture token: `fly ssh console --app someday-stash -C 'printenv CAPTURE_TOKEN'` (or read `.deploy-token.txt` on the Mac that deployed).
+  Produces `Save to Someday.shortcut`. AirDrop it to your iPhone → delete the old "Save to Someday" if present → Add Shortcut.
+  No iCloud Mac available? Build it by hand with the recipe in README → "Ways to save", but use a **Repeat with Each** over images (one POST per photo), not one Base64 of the whole album.
+  Capture token fallback: read `.deploy-token.txt` on the Mac that deployed.
 - [ ] On the iPhone: open `https://someday-stash.fly.dev` in Safari → log in → Share → **Add to Home Screen**.
 - [ ] Test: open Instagram, find a Reel, Share → Save to Someday. Expect a "Saved ✨" notification. Open the Someday icon, it's there.
+- [ ] Test multi-photo: in Photos, select ~5–10 shots → Share → Save to Someday. Expect "Saved ✨" and every photo on the home grid (may take a minute for AI to catch up). `/api/health` should stay `"ok":true`.
 
 ## 5. Your dead screenshots
 - [ ] System Settings → Privacy & Security → Full Disk Access → turn on your terminal app (Terminal, iTerm or Claude).

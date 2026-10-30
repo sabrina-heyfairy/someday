@@ -58,10 +58,13 @@ Then regenerate and reinstall the Shortcut (section 4) — the old one must not 
   ```
 
 ## 4. Phone: Shortcut + home screen
-- [ ] **Regenerate the Shortcut after the multi-photo capture fix** (older builds POST every selected photo in one body and crash the Fly VM). On a Mac signed into iCloud:
+- [ ] **Regenerate the Shortcut after the multi-photo capture fix** (older builds POST every selected photo in one body and crash the Fly VM). On a Mac signed into iCloud, from your someday checkout:
   ```bash
-  cd ~/Documents/someday && git pull
+  git pull
   TOKEN=$(fly ssh console --app someday-stash -C 'printenv CAPTURE_TOKEN' 2>/dev/null | tail -1)
+  # Prefer a fresh token if the old one was pasted into chat/email:
+  # fly secrets set --app someday-stash CAPTURE_TOKEN="$(openssl rand -hex 24)"
+  # TOKEN=$(fly ssh console --app someday-stash -C 'printenv CAPTURE_TOKEN' 2>/dev/null | tail -1)
   npm run shortcut -- https://someday-stash.fly.dev "$TOKEN"
   ```
   Produces `Save to Someday.shortcut`. AirDrop it to your iPhone → delete the old "Save to Someday" if present → Add Shortcut.

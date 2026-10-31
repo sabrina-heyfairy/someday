@@ -26,13 +26,13 @@ export default async function AddPage({ searchParams }: { searchParams: Promise<
   const sharedUrl = shared.match(/https?:\/\/\S+/)?.[0] ?? "";
   const sharedText = shared.replace(sharedUrl, "").trim();
   return (
-    <form action={add} className="card max-w-lg mx-auto rounded-2xl p-5 space-y-3">
+    <form action={add} className="card max-w-lg mx-auto p-5 space-y-3">
       <h1 className="font-semibold">Add something</h1>
       <p className="text-sm muted">Normally you'd share from your phone. This is the manual door for testing or desktop finds.</p>
       <input name="url" defaultValue={sharedUrl} placeholder="Paste a link (Instagram, TikTok, Reddit, YouTube, any page)" className="card w-full rounded-xl px-3 py-2 text-sm" />
       <textarea name="text" rows={2} defaultValue={sharedText} placeholder="…or text / a note" className="card w-full rounded-xl px-3 py-2 text-sm" />
       <input type="file" name="image" accept="image/*" className="text-sm" />
-      <button className="rounded-xl px-4 py-2 text-white font-medium" style={{ background: "var(--accent)" }}>Save</button>
+      <button className="btn px-4 py-2">Save</button>
     </form>
   );
 }

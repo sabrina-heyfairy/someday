@@ -75,7 +75,8 @@ async function main() {
   const worker = async () => {
     for (let it = queue.shift(); it; it = queue.shift()) {
       try {
-        const tags = await retag(it, shelfNames);
+        // One retry: the model occasionally returns malformed JSON on the cheap tier.
+        const tags = await retag(it, shelfNames).catch(() => retag(it, shelfNames));
         for (const t of tags) if ((STANDARD_TAGS as readonly string[]).includes(t)) standard.set(t, (standard.get(t) ?? 0) + 1);
         done++;
         console.log(`[${done + failed}/${items.length}] ${it.title} -> ${tags.join(", ")}`);

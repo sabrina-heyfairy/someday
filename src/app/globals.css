@@ -1,24 +1,86 @@
 @import "tailwindcss";
 
+/*
+  Someday looks like a haberdashery cabinet: cream paper, bold ink outlines with an offset shadow
+  (sticker-ish), colored drawer fronts for shelves sitting on a wooden plank, and a retro display
+  serif (Fraunces) for the brand and labels. Body text stays in the system sans for readability.
+*/
 :root {
-  --bg: #faf7f2;
-  --fg: #1f1b16;
-  --muted: #7a7067;
-  --card: #ffffff;
-  --line: #e9e2d8;
-  --accent: #b5443a;
+  --bg: #f6efe3;          /* cream paper */
+  --dot: #e3d6c2;         /* dot grid on the paper */
+  --fg: #2b2118;          /* ink */
+  --ink: #2b2118;         /* outlines and offset shadows */
+  --muted: #7d6e5f;
+  --card: #fffaf2;
+  --line: #e6dac6;
+  --accent: #d9472b;      /* tomato */
+  --accent-2: #f2c14e;    /* mustard */
+  --plank: linear-gradient(#c08b5c, #9a6a43);
+  --drawer-text: #2b2118;
+  --font-display: var(--font-fraunces), "Iowan Old Style", Georgia, serif;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #171412; --fg: #f3ede6; --muted: #a39a90; --card: #221e1b; --line: #332d28; --accent: #e0695e; }
+  :root {
+    --bg: #1d1712; --dot: #2a221b; --fg: #f3e9dc; --ink: #f3e9dc; --muted: #a89a89;
+    --card: #2a221b; --line: #3a3027; --accent: #ff6b4f; --accent-2: #f2c14e;
+    --plank: linear-gradient(#8a5e3b, #65422a);
+  }
 }
-body { background: var(--bg); color: var(--fg); font-family: ui-sans-serif, -apple-system, "SF Pro Text", system-ui, sans-serif; }
-.card { background: var(--card); border: 1px solid var(--line); }
+
+body {
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--dot) 1.2px, transparent 1.2px);
+  background-size: 20px 20px;
+  color: var(--fg);
+  font-family: ui-sans-serif, -apple-system, "SF Pro Text", system-ui, sans-serif;
+}
+.display { font-family: var(--font-display); font-variation-settings: "SOFT" 60, "WONK" 1; }
+h1, h2 { font-family: var(--font-display); font-variation-settings: "SOFT" 60; letter-spacing: -0.01em; }
+
+/* Sticker: ink outline + hard offset shadow. Used by cards, panels and buttons. */
+.card { background: var(--card); border: 2px solid var(--ink); border-radius: 14px; box-shadow: 3px 3px 0 var(--ink); }
+a.card { transition: transform .12s ease, box-shadow .12s ease; }
+a.card:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); }
+input.card, textarea.card, select.card { box-shadow: none; border-width: 2px; }
+input.card:focus, textarea.card:focus { outline: none; box-shadow: 3px 3px 0 var(--accent); }
 .muted { color: var(--muted); }
-.chip { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 2px 10px; font-size: 12px; white-space: nowrap; }
-.chip.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
-.shelf { border: 1px solid var(--line); background: var(--card); border-radius: 12px; padding: 6px 12px; font-size: 13px; font-weight: 500; white-space: nowrap; display: inline-flex; gap: 6px; align-items: baseline; }
-.shelf .n { color: var(--muted); font-weight: 400; font-size: 11px; }
-.shelf.on { background: var(--fg); color: var(--bg); border-color: var(--fg); }
-.shelf.on .n { color: var(--bg); opacity: .7; }
+
+.chip { border: 1.5px solid var(--ink); background: var(--card); color: var(--fg); border-radius: 999px; padding: 2px 10px; font-size: 12px; white-space: nowrap; box-shadow: 1.5px 1.5px 0 var(--ink); }
+.chip:hover { background: var(--accent-2); color: var(--drawer-text); }
+.chip.on { background: var(--accent); color: #fff; border-color: var(--ink); }
+.chip.on:hover { background: var(--accent); color: #fff; }
+.btn { border: 2px solid var(--ink); border-radius: 12px; background: var(--accent); color: #fff; font-weight: 600; box-shadow: 3px 3px 0 var(--ink); transition: transform .1s ease, box-shadow .1s ease; }
+.btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+/* Shelves as drawer fronts on a plank. --c is the drawer's color. */
+.shelf-row { display: flex; gap: 10px; align-items: flex-end; overflow-x: auto; padding: 14px 16px 0; margin: 0 -16px; scrollbar-width: none; }
+.shelf-row::-webkit-scrollbar { display: none; }
+.drawer {
+  --c: var(--accent-2);
+  position: relative; flex: 0 0 auto; display: inline-flex; flex-direction: column; align-items: center; gap: 3px;
+  min-width: 92px; padding: 9px 14px 10px; border: 2px solid var(--ink); border-bottom-width: 3px; border-radius: 12px 12px 5px 5px;
+  background: var(--c); color: var(--drawer-text); box-shadow: inset 0 -5px 0 rgba(0,0,0,.14), 3px 3px 0 var(--ink);
+  transition: transform .12s ease, box-shadow .12s ease; white-space: nowrap;
+}
+.drawer:hover { transform: translateY(-3px); box-shadow: inset 0 -5px 0 rgba(0,0,0,.14), 4px 6px 0 var(--ink); }
+.drawer.on { transform: translateY(-8px); box-shadow: inset 0 -5px 0 rgba(0,0,0,.14), 5px 10px 0 var(--ink); }
+.drawer .knob { width: 11px; height: 11px; border-radius: 50%; background: #e6b422; border: 2px solid var(--ink); box-shadow: inset 1px 1px 0 rgba(255,255,255,.6); }
+.drawer .label { font-family: var(--font-display); font-variation-settings: "SOFT" 80; font-weight: 700; font-size: 14px; line-height: 1.1; }
+.drawer .n { font-size: 10px; font-weight: 600; line-height: 1; padding: 2px 6px; border-radius: 999px; background: var(--card); color: var(--fg); border: 1.5px solid var(--ink); }
+.drawer.ghost { background: var(--card); color: var(--fg); border-style: dashed; box-shadow: 3px 3px 0 var(--ink); }
+.drawer.ghost .knob { background: var(--card); }
+.plank { height: 12px; border: 2px solid var(--ink); border-radius: 4px; background: var(--plank); box-shadow: 3px 4px 0 var(--ink); margin: 0 -4px; }
+
+/* The filter drawer: a small pull that opens an inset tray. */
+.pull { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 10px; border: 2px solid var(--ink); border-radius: 10px; background: var(--card); box-shadow: 2px 2px 0 var(--ink); cursor: pointer; user-select: none; font-weight: 600; font-size: 12px; }
+.pull::before { content: ""; width: 18px; height: 6px; border-radius: 999px; border: 2px solid var(--ink); background: #e6b422; }
+.pull:hover { background: var(--accent-2); }
+details[open] > .pull { border-radius: 10px 10px 0 0; box-shadow: none; translate: 0 2px; }
+.tray { border: 2px solid var(--ink); border-radius: 0 14px 14px 14px; padding: 12px; background: var(--card);
+  background-image: repeating-linear-gradient(transparent 0 27px, var(--line) 27px 28px); box-shadow: inset 0 6px 10px -8px rgba(0,0,0,.35), 3px 3px 0 var(--ink); }
+
+/* Little colored label tape, e.g. the shelf name on a card. */
+.tape { --c: var(--accent-2); display: inline-block; padding: 1px 7px; border: 1.5px solid var(--ink); border-radius: 4px; background: var(--c); color: var(--drawer-text); font-family: var(--font-display); font-weight: 700; font-size: 11px; line-height: 1.35; transform: rotate(-1.5deg); }
+
 details > summary { list-style: none; }
 details > summary::-webkit-details-marker { display: none; }

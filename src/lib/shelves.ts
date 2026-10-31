@@ -44,3 +44,11 @@ export function pickShelf(h: ShelfHint, shelfNames?: string[]): string | null {
     ?? (h.category === "inspiration" || h.action === "inspo" ? ok("Inspiration") : null)
     ?? null;
 }
+
+// Each shelf gets a drawer color, chosen from the name so a card and the shelf row always agree.
+export const SHELF_COLORS = ["#f2c14e", "#7fc8c3", "#f29b8a", "#c9b0e6", "#f5b1c8", "#a9cfa1", "#f6b57a", "#9dc3e6"] as const;
+export function shelfColor(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return SHELF_COLORS[h % SHELF_COLORS.length];
+}

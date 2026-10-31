@@ -5,6 +5,7 @@ import { HAS_AI_CREDS } from "@/lib/ai";
 import { BulkGrid } from "./bulk-grid";
 import { requireSession } from "@/lib/require-session";
 import { createShelfFromTopic } from "./collections/actions";
+import { shelfColor } from "@/lib/shelves";
 
 export const dynamic = "force-dynamic";
 
@@ -45,23 +46,30 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
     <div className="space-y-4">
       <form className="flex gap-2" action="/">
         {sp.shelf && <input type="hidden" name="shelf" value={sp.shelf} />}
-        <input name="q" defaultValue={sp.q ?? ""} placeholder="Search everything you saved…" className="card flex-1 rounded-xl px-4 py-3 text-base outline-none focus:ring-2" style={{ "--tw-ring-color": "var(--accent)" } as React.CSSProperties} />
-        <button className="rounded-xl px-4 font-medium text-white" style={{ background: "var(--accent)" }}>Search</button>
+        <input name="q" defaultValue={sp.q ?? ""} placeholder="Search everything you saved…" className="card flex-1 rounded-xl px-4 py-3 text-base" />
+        <button className="btn px-4">Search</button>
       </form>
 
-      {/* Shelves: the one primary filter. */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 items-center">
-        <Link href={link({ shelf: undefined })} className={`shelf ${!sp.shelf ? "on" : ""}`}>All <span className="n">{total}</span></Link>
-        {f.shelves.filter((s) => s.n > 0 || s.id === sp.shelf).map((s) => <Link key={s.id} href={link({ shelf: sp.shelf === s.id ? undefined : s.id })} className={`shelf ${sp.shelf === s.id ? "on" : ""}`}>{s.name} <span className="n">{s.n}</span></Link>)}
-        {f.unshelved > 0 && <Link href={link({ shelf: unshelved ? undefined : "none" })} className={`shelf ${unshelved ? "on" : ""}`} style={{ borderStyle: "dashed" }}>Unsorted <span className="n">{f.unshelved}</span></Link>}
-        <Link href="/collections" className="shelf muted" title="Add, rename or reorder shelves">+</Link>
+      {/* Shelves: the one primary filter, drawn as drawer fronts on a plank. */}
+      <div>
+        <div className="shelf-row">
+          <Link href={link({ shelf: undefined })} className={`drawer ${!sp.shelf ? "on" : ""}`} style={{ "--c": "var(--card)" } as React.CSSProperties}><span className="knob" /><span className="label">Everything</span><span className="n">{total}</span></Link>
+          {f.shelves.filter((s) => s.n > 0 || s.id === sp.shelf).map((s) => (
+            <Link key={s.id} href={link({ shelf: sp.shelf === s.id ? undefined : s.id })} className={`drawer ${sp.shelf === s.id ? "on" : ""}`} style={{ "--c": shelfColor(s.name) } as React.CSSProperties}>
+              <span className="knob" /><span className="label">{s.name}</span><span className="n">{s.n}</span>
+            </Link>
+          ))}
+          {f.unshelved > 0 && <Link href={link({ shelf: unshelved ? undefined : "none" })} className={`drawer ghost ${unshelved ? "on" : ""}`}><span className="knob" /><span className="label">Unsorted</span><span className="n">{f.unshelved}</span></Link>}
+          <Link href="/collections" className="drawer ghost" title="Add, rename or reorder shelves" style={{ minWidth: 56 }}><span className="knob" /><span className="label">+</span><span className="n muted">new</span></Link>
+        </div>
+        <div className="plank" />
       </div>
 
       {/* Everything else lives in the drawer. */}
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <details className="inline-block">
-          <summary className={`chip inline-flex cursor-pointer select-none ${active.length ? "on" : ""}`}>Filter{active.length ? ` · ${active.length}` : ""}</summary>
-          <div className="card rounded-2xl p-3 mt-2 space-y-3 w-[min(92vw,640px)]">
+          <summary className="pull">Filters{active.length ? ` · ${active.length}` : ""}</summary>
+          <div className="tray space-y-3 w-[min(92vw,640px)]">
             <Row label="Source">
               {f.srcs.map((s) => <Link key={s.source} href={link({ source: sp.source === s.source ? undefined : s.source })} className={`chip ${sp.source === s.source ? "on" : ""}`}>{s.source} {s.n}</Link>)}
             </Row>
@@ -80,11 +88,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
         </details>
         {active.map((a) => <Link key={a.label} href={link(a.clear)} className="chip on">{a.label} ×</Link>)}
         {sp.q && <Link href={link({ q: undefined })} className="chip on">“{sp.q}” ×</Link>}
-        <span className="muted ml-auto">{items.length}{items.length === 60 ? "+" : ""} {current ? `on ${current.name}` : unshelved ? "unsorted" : "saved"}</span>
+        <span className="muted ml-auto display text-sm italic">{items.length}{items.length === 60 ? "+" : ""} {current ? `on the ${current.name} shelf` : unshelved ? "unsorted" : "saved"}</span>
       </div>
 
       {unshelved && topics.length > 0 && (
-        <div className="card rounded-2xl p-3 flex flex-wrap items-center gap-2 text-xs">
+        <div className="tray flex flex-wrap items-center gap-2 text-xs">
           <span className="muted">Nothing fits a shelf yet. Make one:</span>
           {topics.map((t) => (
             <form key={t.topic} action={createShelfFromTopic}><input type="hidden" name="topic" value={t.topic} /><button className="chip">{t.topic.charAt(0).toUpperCase() + t.topic.slice(1)} shelf · {t.n}</button></form>
@@ -93,7 +101,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
       )}
 
       {items.length === 0 ? (
-        <div className="card rounded-2xl p-10 text-center muted">
+        <div className="card p-10 text-center muted">
           {total === 0 ? <>Nothing saved yet. Share a link or a screenshot from your phone with the Shortcut, or tap Add.</> : "No matches. Try fewer words or clear a filter."}
         </div>
       ) : (

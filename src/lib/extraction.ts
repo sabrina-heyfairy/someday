@@ -3,13 +3,13 @@ import { ACTIONS } from "./db";
 
 // What the AI returns for any save. Sewing fields are filled only when the save is about sewing.
 export const Extraction = z.object({
-  title: z.string().max(120),
-  summary: z.string().max(300),
+  title: z.string().transform((t) => t.slice(0, 120)),
+  summary: z.string().transform((t) => t.slice(0, 300)),
   topic: z.string().max(40).default("other"),
   shelf: z.string().max(80).nullable().default(null),
   category: z.string().max(40).default("other"),
   action: z.enum(ACTIONS).catch("reference"),
-  tags: z.array(z.string()).max(10).default([]),
+  tags: z.array(z.string()).default([]).transform((t) => t.slice(0, 12)),   // trim rather than reject when the model over-tags
   garments: z.array(z.string()).default([]),
   techniques: z.array(z.string()).default([]),
   fabrics: z.array(z.string()).default([]),

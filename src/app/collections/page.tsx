@@ -2,6 +2,7 @@ import Link from "next/link";
 import { sql } from "@/lib/db";
 import { requireSession } from "@/lib/require-session";
 import { createCollection, deleteCollection, updateShelf } from "./actions";
+import { shelfColor } from "@/lib/shelves";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export default async function ShelvesPage() {
         </div>
         <form action={createCollection} className="flex gap-2">
           <input name="name" placeholder="New shelf, e.g. Quilting" className="card rounded-xl px-3 py-1.5 text-sm" required />
-          <button className="chip on">Add shelf</button>
+          <button className="btn px-3 py-1.5 text-sm">Add shelf</button>
         </form>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -44,13 +45,14 @@ export default async function ShelvesPage() {
 
 function ShelfCard({ c }: { c: Row }) {
   return (
-    <div className="card rounded-2xl overflow-hidden">
+    <div className="card overflow-hidden">
       <Link href={`/?shelf=${c.id}`} className="block hover:opacity-90">
-        <div className="grid grid-cols-2 aspect-[4/3]" style={{ background: "var(--line)" }}>
+        <div className="grid grid-cols-2 aspect-[4/3] relative" style={{ background: c.thumbs.length ? "var(--line)" : c.is_shelf ? shelfColor(c.name) : "var(--line)", borderBottom: "2px solid var(--ink)" }}>
+          {c.thumbs.length === 0 && <span className="absolute left-1/2 top-3 -translate-x-1/2 w-3 h-3 rounded-full border-2" style={{ background: "#e6b422", borderColor: "var(--ink)" }} />}
           {c.thumbs.slice(0, 4).map((t) => <img key={t} src={`/api/media/${t}`} alt="" className="w-full h-full object-cover" />)}
         </div>
         <div className="p-3 pb-1">
-          <div className="font-medium text-sm">{c.name}</div>
+          <div className="display font-bold text-base flex items-center gap-2"><span className="inline-block w-3 h-3 rounded-full border-2" style={{ background: c.is_shelf ? shelfColor(c.name) : "var(--line)", borderColor: "var(--ink)" }} />{c.name}</div>
           <div className="text-xs muted">{c.n} {c.n === 1 ? "item" : "items"}{c.description ? ` · ${c.description}` : ""}</div>
         </div>
       </Link>

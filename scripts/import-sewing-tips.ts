@@ -135,11 +135,23 @@ async function main() {
     const action = actionFor(tip);
     const notes = tip.notes.trim() || null;
 
-    const [existing] = await sql<{ id: string }[]>`
-      select id from items where meta->>'archive_id' = ${tip.id} limit 1`;
+    const [existing] = await sql<{ id: string; retagged: boolean }[]>`
+      select id, (meta ? 'retagged_at') as retagged from items where meta->>'archive_id' = ${tip.id} limit 1`;
 
     let itemId: string;
-    if (existing) {
+    if (existing?.retagged) {
+      // Re-tagged by the AI (scripts/retag.ts): keep its tags/topic/category and the user's title; refresh only the structural bits.
+      await sql`
+        update items set
+          source = ${source}, kind = ${kind}, channel = 'archive',
+          url = ${tip.url}, canonical_url = ${canonical}, url_hash = ${urlHash},
+          status = 'done', error = null, steps = ${steps}, notes = ${notes},
+          meta = meta || ${sql.json(meta as never)},
+          raw_text = ${tip.how_to.trim() || tip.notes.trim() || null}
+        where id = ${existing.id}`;
+      itemId = existing.id;
+      updated++;
+    } else if (existing) {
       await sql`
         update items set
           source = ${source}, kind = ${kind}, channel = 'archive',

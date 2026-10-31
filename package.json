@@ -21,6 +21,7 @@
     "test:capture": "tsx scripts/test-multi-capture.ts",
     "previews": "tsx scripts/backfill-previews.ts",
     "shelve": "tsx scripts/shelve.ts",
+    "retag": "tsx scripts/retag.ts",
     "deploy": "scripts/deploy.sh",
     "scheduler": "tsx scripts/scheduler.ts"
   },

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sql, type Item } from "@/lib/db";
 import { ItemCard } from "../../item-card";
-import { reprocess, saveNotes, toggleStar, archive } from "./actions";
+import { reprocess, saveNotes, toggleStar, archive, addTag, removeTag } from "./actions";
 import { setStage } from "../../make/actions";
 import { STAGES } from "@/lib/stages";
 import { createCollection, toggleMembership } from "../../collections/actions";
@@ -90,19 +90,33 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           </div>
         </Block>
 
-        <details>
-          <summary className="text-xs uppercase tracking-wide muted cursor-pointer">Tags <span className="normal-case">· {item.tags.length ? item.tags.join(", ") : "none"} · edit</span></summary>
-          <form action={updateFacets} className="mt-2 space-y-2">
-            <input type="hidden" name="id" value={id} />
-            <input name="tags" defaultValue={item.tags.join(", ")} placeholder="comma, separated, tags" className="card w-full rounded-xl px-3 py-1.5 text-sm" />
-            <div className="flex flex-wrap gap-2 text-sm">
-              <select name="category" defaultValue={item.category ?? ""} className="card rounded-xl px-2 py-1"><option value="">category…</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select>
-              <select name="action" defaultValue={item.action ?? ""} className="card rounded-xl px-2 py-1"><option value="">action…</option>{ACTIONS.map((a) => <option key={a}>{a}</option>)}</select>
-              <button className="chip on">Save</button>
-            </div>
-          </form>
-          <div className="flex flex-wrap gap-1 mt-2">{item.tags.map((t) => <Link key={t} href={`/?tag=${encodeURIComponent(t)}`} className="chip">{t}</Link>)}</div>
-        </details>
+        <Block label="Tags">
+          <div className="flex flex-wrap gap-1 items-center">
+            {item.tags.map((t) => (
+              <span key={t} className="chip inline-flex items-center gap-1 pr-1">
+                <Link href={`/?tag=${encodeURIComponent(t)}`}>{t}</Link>
+                <form action={removeTag} className="inline"><input type="hidden" name="id" value={id} /><input type="hidden" name="tag" value={t} /><button aria-label={`remove ${t}`} title="Remove tag" className="w-4 h-4 rounded-full leading-none text-[11px] font-bold" style={{ background: "var(--ink)", color: "var(--bg)" }}>×</button></form>
+              </span>
+            ))}
+            <form action={addTag} className="flex gap-1">
+              <input type="hidden" name="id" value={id} />
+              <input name="tag" placeholder="add tag…" className="card rounded-full px-3 py-0.5 text-xs w-32" />
+              <button className="chip">Add</button>
+            </form>
+          </div>
+          <details className="mt-2">
+            <summary className="text-xs muted cursor-pointer underline">Edit all as text · category · action</summary>
+            <form action={updateFacets} className="mt-2 space-y-2">
+              <input type="hidden" name="id" value={id} />
+              <input name="tags" defaultValue={item.tags.join(", ")} placeholder="comma, separated, tags" className="card w-full rounded-xl px-3 py-1.5 text-sm" />
+              <div className="flex flex-wrap gap-2 text-sm">
+                <select name="category" defaultValue={item.category ?? ""} className="card rounded-xl px-2 py-1"><option value="">category…</option>{CATEGORIES.map((c) => <option key={c}>{c}</option>)}</select>
+                <select name="action" defaultValue={item.action ?? ""} className="card rounded-xl px-2 py-1"><option value="">action…</option>{ACTIONS.map((a) => <option key={a}>{a}</option>)}</select>
+                <button className="chip on">Save</button>
+              </div>
+            </form>
+          </details>
+        </Block>
         <Facts label="Garments" items={item.garments} />
         <Facts label="Techniques" items={item.techniques} />
         <Facts label="Fabrics" items={item.fabrics} />

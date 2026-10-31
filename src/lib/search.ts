@@ -29,7 +29,7 @@ export async function searchItems(f: Filters): Promise<Item[]> {
       ${f.tag ? sql`and ${f.tag} = any(tags)` : sql``}
       ${f.status ? sql`and status = ${f.status}` : sql``}
       ${f.starred ? sql`and starred` : sql``}
-      ${q && !vec ? sql`and (search @@ websearch_to_tsquery('english', ${q}) or title ilike ${"%" + q + "%"} or raw_text ilike ${"%" + q + "%"})` : sql``}
+      ${q && !vec ? sql`and (search @@ websearch_to_tsquery('english', ${q}) or title ilike ${"%" + q + "%"} or raw_text ilike ${"%" + q + "%"} or ocr_text ilike ${"%" + q + "%"} or summary ilike ${"%" + q + "%"})` : sql``}
       ${q && vec ? sql`and (search @@ websearch_to_tsquery('english', ${q}) or embedding is not null)` : sql``}
     order by
       ${q && vec ? sql`(coalesce(ts_rank(search, websearch_to_tsquery('english', ${q})), 0) * 2 + coalesce(1 - (embedding <=> ${JSON.stringify(vec)}::vector), 0)) desc,` : sql``}

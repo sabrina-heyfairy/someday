@@ -44,8 +44,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
 
   return (
     <div className="space-y-4">
+      {/* Search always spans every shelf and drawer; the shelf is dropped on submit. Tapping a drawer afterwards narrows the hits. */}
       <form className="flex gap-2" action="/">
-        {sp.shelf && <input type="hidden" name="shelf" value={sp.shelf} />}
         <input name="q" defaultValue={sp.q ?? ""} placeholder="Search everything you saved…" className="card flex-1 rounded-xl px-4 py-3 text-base" />
         <button className="btn px-4">Search</button>
       </form>
@@ -88,7 +88,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
         </details>
         {active.map((a) => <Link key={a.label} href={link(a.clear)} className="chip on">{a.label} ×</Link>)}
         {sp.q && <Link href={link({ q: undefined })} className="chip on">“{sp.q}” ×</Link>}
-        <span className="muted ml-auto display text-sm italic">{items.length}{items.length === 60 ? "+" : ""} {current ? `on the ${current.name} shelf` : unshelved ? "unsorted" : "saved"}</span>
+        <span className="muted ml-auto display text-sm italic">{items.length}{items.length === 60 ? "+" : ""} {current ? `on the ${current.name} shelf` : unshelved ? "unsorted" : sp.q ? "found everywhere" : "saved"}</span>
       </div>
 
       {unshelved && topics.length > 0 && (

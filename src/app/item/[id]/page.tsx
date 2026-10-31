@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { sql, type Item } from "@/lib/db";
 import { ItemCard } from "../../item-card";
+import { CloseButton } from "./close-button";
 import { reprocess, saveNotes, toggleStar, archive, addTag, removeTag } from "./actions";
 import { setStage } from "../../make/actions";
 import { STAGES } from "@/lib/stages";
@@ -29,7 +30,8 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
   const m = (p?: string) => (p ? `/api/media/${p}` : null);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+    <div className="relative grid gap-6 pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+      <CloseButton />
       <div className="space-y-3">
         {item.media.video ? <video src={m(item.media.video)!} poster={m(item.media.thumbnail) ?? undefined} controls className="w-full rounded-2xl card" /> :
           m(item.media.thumbnail) ? <img src={m(item.media.thumbnail)!} alt="" className="w-full rounded-2xl card" /> : null}

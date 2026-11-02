@@ -44,7 +44,7 @@ npm run dev                       # http://localhost:3000
 
 ## Ways to save
 
-**1. iPhone Share Sheet (the main one).** Easiest: generate and sign the shortcut, then AirDrop it to your phone.
+**1. iPhone Share Sheet (the main one).** Easiest: generate and sign the shortcut, then AirDrop it to your phone. Step-by-step for a fresh Mac: [docs/SHORTCUT-REBUILD.md](docs/SHORTCUT-REBUILD.md). Signing needs a Mac signed into iCloud.
 
 ```bash
 npm run shortcut -- https://YOUR-HOST YOUR_CAPTURE_TOKEN

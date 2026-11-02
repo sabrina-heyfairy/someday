@@ -7,6 +7,19 @@ Why rebuild: the current Shortcut on the phone posts a share's links and picture
 TikTok shares no link is sent at all. The new build sends the links **with** each picture, plus the share text, so the
 server can always attach the "Open on tiktok" link to the saved card.
 
+## Faster: edit the Shortcut on the phone instead (no Mac needed)
+
+Only one action changes. Shortcuts app → long-press **Save to Someday** → **Edit**.
+
+1. Scroll to the **second** "Repeat with Each" block, the one that contains **Convert Image** and **Base64 Encode**.
+2. Inside it, tap the **Get Contents of URL** action to expand it, then tap **Request Body** to show its fields.
+3. Tap **Add new field** → **Text**. Key: `url`. Value: tap the value box, pick the **URLs** variable (the one set by
+   "Set Variable URLs" near the top; it may appear under the variables bar as **URLs**).
+4. Tap **Add new field** → **Text** again. Key: `text`. Value: pick **Shortcut Input**.
+5. Tap **Done**. Share a TikTok video to test; the card should get the `tiktok ↗` pill.
+
+The server already merges the separate link request the first Repeat still sends, so nothing else needs to move.
+
 ## 0. One-time setup on the personal Mac
 
 Skip anything already in place.

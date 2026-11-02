@@ -37,10 +37,18 @@ export async function intake(c: Capture): Promise<{ id: string; duplicate: boole
   const source = detectSource(url, kind);
 
   if (urlHash) {
-    const [dup] = await sql`select id from items where url_hash = ${urlHash}`;
+    const [dup] = await sql<{ id: string; has_image: boolean }[]>`select id, (image_hash is not null or (media->>'original') is not null) has_image from items where url_hash = ${urlHash}`;
     if (dup) {
       // Keep any new note, but don't stack the same text twice.
       if (text) await sql`update items set raw_text = trim(coalesce(raw_text,'') || E'\n' || ${text}) where id = ${dup.id} and coalesce(raw_text,'') not like ${"%" + text + "%"}`;
+      // Same link, but this time with a picture the saved item lacks (the Shortcut posts the link first, then the
+      // image with the link attached): keep the picture and re-run processing instead of dropping it.
+      if (c.image && !dup.has_image) {
+        const ph = await hashImageBuffer(c.image.buffer, c.image.filename);
+        await sql`update items set image_hash = ${imageHash}, phash = ${ph ? sql`${ph}::bit(64)` : null}, status = 'queued', error = null where id = ${dup.id}`;
+        await saveOriginal(dup.id, c.image);
+        return { id: dup.id, duplicate: false };
+      }
       return { id: dup.id, duplicate: true };
     }
   }

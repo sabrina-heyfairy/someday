@@ -9,3 +9,7 @@ dist/
 .deploy-password.txt
 .deploy-token.txt
 .claude/
+
+# Built iOS Shortcut: contains the live capture token
+*.shortcut
+*.unsigned.plist

@@ -6,6 +6,9 @@ primary_region = "sjc"
   dockerfile = "Dockerfile"
 
 [env]
+  # Sabrina's deployment imports her sewing-tips archive (content/sewing-tips-archive.json) at boot. Delete this line
+  # (or the file) for your own deployment; it is sample data, not part of the app.
+  SEWING_TIPS_ARCHIVE = "1"
   MEDIA_DIR = "/data/media"
   INLINE_PROCESS = "1"
   NEXT_TELEMETRY_DISABLED = "1"

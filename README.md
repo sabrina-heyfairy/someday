@@ -42,6 +42,24 @@ npm run dev                       # http://localhost:3000
 | `OPENAI_API_KEY` | Whisper transcription of video audio | Yes, you lose spoken content |
 | `VOYAGE_API_KEY` | Embeddings for semantic search ("pants like these") | Yes, keyword search still works |
 
+## Deploy your own
+
+Someday is a single Next.js app plus Postgres and a media disk, built to run on Fly.io for about $5 a month. You need a
+Fly account with a card on file (the free trial stops machines every five minutes), an Anthropic API key, Node 22, and a
+Mac signed into iCloud once to sign the iPhone Shortcut.
+
+1. Clone, then `cp .env.example .env.local` and set `ANTHROPIC_API_KEY` (and `APP_PASSWORD` if you want to pick it).
+2. Edit `fly.toml`: change `app = "someday-stash"` to your own name (Fly app names are global) and delete the
+   `SEWING_TIPS_ARCHIVE` line, which imports the author's personal sewing archive.
+3. `brew install flyctl && fly auth login`, then `npm run deploy`. It creates the app, a 10 GB disk and a Fly Postgres,
+   generates a capture token and web password (written to `.deploy-password.txt`, gitignored), deploys and health-checks.
+   Safe to rerun.
+4. Build the share-sheet Shortcut and put it on your phone: [docs/SHORTCUT-REBUILD.md](docs/SHORTCUT-REBUILD.md).
+5. Open the site in Safari on the phone → Share → Add to Home Screen.
+
+Optional: `OPENAI_API_KEY` for audio transcripts, `VOYAGE_API_KEY` for semantic search, Twilio for saving by text,
+a Reddit app for syncing saved posts. All are skipped when blank. See "Deploying" below for details and known limits.
+
 ## Ways to save
 
 **1. iPhone Share Sheet (the main one).** Easiest: generate and sign the shortcut, then AirDrop it to your phone. Step-by-step for a fresh Mac: [docs/SHORTCUT-REBUILD.md](docs/SHORTCUT-REBUILD.md). Signing needs a Mac signed into iCloud.
@@ -113,7 +131,7 @@ Tap **Select** on the grid, tick cards, and the bar at the bottom tags, files in
 
 ## Sewing tips archive
 
-Sabrina's Sewist Studio tips live in `content/sewing-tips-archive.json` (210 entries: title, source, category, tags, notes, how-to, status). Import them into Postgres (and the **Sewing tips archive** collection) with:
+The author's Sewist Studio tips live in `content/sewing-tips-archive.json` (210 entries: title, source, category, tags, notes, how-to, status). They are personal sample data: the boot-time import only runs when `SEWING_TIPS_ARCHIVE=1` is set (it is, in this repo's `fly.toml`; remove it for your own deployment). Import by hand with:
 
 ```bash
 npm run import:tips -- --dry-run

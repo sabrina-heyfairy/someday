@@ -111,7 +111,8 @@ function buildCaptures(opts: {
   const { urls, images, channel, meta } = opts;
   let text = opts.text;
   if (text && urls[0] && text === urls[0]) text = null;
-  if (text && images[0] && /^(IMG_\d+|shared)(-\d+)?\.(jpe?g|png|heic)$/i.test(text)) text = null;
+  // When the Shortcut coerces an image share to text it yields the file name; that is not a note.
+  if (text && images[0] && /^[^\s/]+\.(jpe?g|png|heic|heif|gif|webp|mov|mp4)$/i.test(text)) text = null;
 
   const out: Capture[] = [];
   if (images.length) {

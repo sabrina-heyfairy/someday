@@ -164,6 +164,7 @@ def build(host, token):
         post_json(host, token, [
             form_item("image_base64", var_text("ImageBase64", b64_uuid)),
             form_item("url", named_text("URLs")),          # every link in the share, newline-joined; server splits on whitespace
+            form_item("text", ext_input_text()),            # the share as text too: the server pulls a link out of it if URL detection missed one
             form_item("filename", text("shared.jpg")),
             form_item("channel", text("shortcut")),
         ], img_post, "ImageResponse"),

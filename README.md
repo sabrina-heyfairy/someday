@@ -49,8 +49,9 @@ Fly account with a card on file (the free trial stops machines every five minute
 Mac signed into iCloud once to sign the iPhone Shortcut.
 
 1. Clone, then `cp .env.example .env.local` and set `ANTHROPIC_API_KEY` (and `APP_PASSWORD` if you want to pick it).
-2. Edit `fly.toml`: change `app = "someday-stash"` to your own name (Fly app names are global) and delete the
-   `SEWING_TIPS_ARCHIVE` line, which imports the author's personal sewing archive.
+2. Edit `fly.toml`: change `app = "someday-stash"` to your own name (Fly app names are global; it becomes your URL,
+   `<name>.fly.dev`) and delete the `SEWING_TIPS_ARCHIVE` line, which imports the author's personal sewing archive.
+   The deploy script refuses to run with the default name on another account; `APP=my-name npm run deploy` also works.
 3. `brew install flyctl && fly auth login`, then `npm run deploy`. It creates the app, a 10 GB disk and a Fly Postgres,
    generates a capture token and web password (written to `.deploy-password.txt`, gitignored), deploys and health-checks.
    Safe to rerun.

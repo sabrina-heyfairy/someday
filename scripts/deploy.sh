@@ -27,6 +27,19 @@ step "checking fly login"
 fly auth whoami >/dev/null || { echo "Run: fly auth login"; exit 1; }
 
 step "app $APP"
+# Fly app names are global. "someday-stash" is the author's deployment; a fresh clone must pick its own name,
+# which also becomes the URL (<name>.fly.dev). Fail here with a clear message instead of deep inside `fly apps create`.
+if [ "$APP" = "someday-stash" ] && ! has_app "$APP"; then
+  cat <<MSG
+
+  This fly.toml still says app = "someday-stash", which belongs to another Fly account.
+  Pick your own name (it becomes your URL, e.g. https://someday-jen.fly.dev) and either:
+    - edit the first line of fly.toml:   app = "someday-jen"
+    - or run:                            APP=someday-jen npm run deploy
+  Then run this again.
+MSG
+  exit 1
+fi
 has_app "$APP" || fly apps create "$APP" --org personal
 # Portable in-place edit (macOS sed needs '', GNU sed rejects it).
 sed -i.bak "s/^app = \".*\"/app = \"$APP\"/; s/^primary_region = \".*\"/primary_region = \"$REGION\"/" fly.toml && rm -f fly.toml.bak

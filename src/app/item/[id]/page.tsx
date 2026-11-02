@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { sql, type Item } from "@/lib/db";
 import { ItemCard } from "../../item-card";
 import { CloseButton } from "./close-button";
-import { reprocess, saveNotes, toggleStar, archive, addTag, removeTag } from "./actions";
+import { reprocess, saveNotes, toggleStar, archive, addTag, removeTag, setUrl } from "./actions";
 import { setStage } from "../../make/actions";
 import { STAGES } from "@/lib/stages";
 import { createCollection, toggleMembership } from "../../collections/actions";
@@ -44,6 +44,13 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
           </a>
         )}
         {item.url && <div className="text-[11px] muted break-all">{item.url}</div>}
+        {!item.url && (
+          <form action={setUrl} className="flex gap-1">
+            <input type="hidden" name="id" value={id} />
+            <input name="url" type="url" placeholder="Paste the original link…" className="card flex-1 rounded-full px-3 py-1 text-xs" />
+            <button className="chip">Add link</button>
+          </form>
+        )}
       </div>
 
       <div className="space-y-4">

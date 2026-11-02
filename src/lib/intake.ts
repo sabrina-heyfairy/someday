@@ -67,6 +67,13 @@ export async function intake(c: Capture): Promise<{ id: string; duplicate: boole
     }
   }
 
+  // The Shortcut POSTs the links and the pictures of one share as separate requests. Pair them back together so a
+  // TikTok/Instagram share with a poster image becomes ONE item that has both the picture and the "Open on" link.
+  if (c.channel === "shortcut") {
+    const paired = await pairShortcutHalves({ url, canonical, urlHash, text, image: c.image ?? null, imageHash, phash, source });
+    if (paired) return { id: paired, duplicate: false };
+  }
+
   try {
     const [row] = await sql`
       insert into items (source, kind, channel, url, canonical_url, url_hash, image_hash, phash, raw_text, meta, created_at)
@@ -90,6 +97,30 @@ export async function intake(c: Capture): Promise<{ id: string; duplicate: boole
     }
     throw e;
   }
+}
+
+async function pairShortcutHalves(h: { url: string | null; canonical: string | null; urlHash: string | null; text: string | null;
+  image: { buffer: Buffer; filename?: string } | null; imageHash: string | null; phash: string | null; source: string }): Promise<string | null> {
+  if (h.image && !h.url) {
+    // A picture with no link: is there a link-only item from the Shortcut moments ago that has no picture yet?
+    const [m] = await sql<{ id: string }[]>`select id from items where channel = 'shortcut' and url is not null and image_hash is null
+      and (media->>'original') is null and duplicate_of is null and created_at > now() - interval '90 seconds' order by created_at desc limit 1`;
+    if (!m) return null;
+    await sql`update items set image_hash = ${h.imageHash}, phash = ${h.phash ? sql`${h.phash}::bit(64)` : null}, status = 'queued', error = null where id = ${m.id}`;
+    await saveOriginal(m.id, h.image);
+    return m.id;
+  }
+  if (h.url && !h.image) {
+    // A link with no picture: is there a picture-only item from the Shortcut moments ago?
+    const [m] = await sql<{ id: string }[]>`select id from items where channel = 'shortcut' and url is null and image_hash is not null
+      and duplicate_of is null and created_at > now() - interval '90 seconds' order by created_at desc limit 1`;
+    if (!m) return null;
+    await sql`update items set url = ${h.url}, canonical_url = ${h.canonical}, url_hash = ${h.urlHash}, source = ${h.source},
+      raw_text = case when ${h.text}::text is null then raw_text else trim(coalesce(raw_text,'') || E'\n' || ${h.text}) end,
+      status = 'queued', error = null where id = ${m.id}`;
+    return m.id;
+  }
+  return null;
 }
 
 async function saveOriginal(id: string, image: { buffer: Buffer; filename?: string }) {

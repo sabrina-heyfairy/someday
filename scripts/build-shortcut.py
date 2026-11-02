@@ -114,6 +114,7 @@ def build(host, token):
     if_img = str(uuid.uuid4()).upper()
     if_url = str(uuid.uuid4()).upper()
     text_post = str(uuid.uuid4()).upper()
+    if_nolinkimg = str(uuid.uuid4()).upper()
 
     actions = [
         # Detect every link and every image in the share.
@@ -130,7 +131,9 @@ def build(host, token):
         get_var("Images", get_imgs_uuid, "ImagesAgain"),
         count_items(img_count_uuid, "ImageCount"),
 
-        # One POST per URL.
+        # Links alone only when the share has no picture; otherwise the links ride along with the image POST below,
+        # so a TikTok/Instagram share (poster image + link) becomes one item with both.
+        if_number_equals(if_nolinkimg, "ImageCount", img_count_uuid, 0, 0),
         {"WFWorkflowActionIdentifier": "is.workflow.actions.repeat.each",
          "WFWorkflowActionParameters": {"GroupingIdentifier": url_group, "WFControlFlowMode": 0,
                                        "WFInput": stored_attach("URLs"), "UUID": url_repeat_start}},
@@ -140,6 +143,7 @@ def build(host, token):
         ], url_post, "URLResponse"),
         {"WFWorkflowActionIdentifier": "is.workflow.actions.repeat.each",
          "WFWorkflowActionParameters": {"GroupingIdentifier": url_group, "WFControlFlowMode": 2}},
+        endif(if_nolinkimg),
 
         # One POST per image: JPEG-compress, then base64. Never batch into one body.
         {"WFWorkflowActionIdentifier": "is.workflow.actions.repeat.each",
@@ -159,6 +163,7 @@ def build(host, token):
              "UUID": b64_uuid, "CustomOutputName": "ImageBase64"}},
         post_json(host, token, [
             form_item("image_base64", var_text("ImageBase64", b64_uuid)),
+            form_item("url", named_text("URLs")),          # every link in the share, newline-joined; server splits on whitespace
             form_item("filename", text("shared.jpg")),
             form_item("channel", text("shortcut")),
         ], img_post, "ImageResponse"),

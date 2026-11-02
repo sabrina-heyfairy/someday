@@ -38,7 +38,12 @@ export default async function ItemPage({ params }: { params: Promise<{ id: strin
         {item.media.frames && item.media.frames.length > 1 && (
           <div className="flex gap-1.5 overflow-x-auto">{item.media.frames.map((f) => <img key={f} src={m(f)!} alt="" className="h-16 rounded-md" />)}</div>
         )}
-        {item.url && <a href={item.url} target="_blank" rel="noreferrer" className="block text-sm underline break-all" style={{ color: "var(--accent)" }}>Open original on {item.source} ↗</a>}
+        {item.url && (
+          <a href={item.url} target="_blank" rel="noreferrer" className="btn inline-flex items-center gap-2 px-4 py-2 text-sm">
+            Open on {item.source} ↗
+          </a>
+        )}
+        {item.url && <div className="text-[11px] muted break-all">{item.url}</div>}
       </div>
 
       <div className="space-y-4">

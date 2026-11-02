@@ -90,3 +90,9 @@ details > summary::-webkit-details-marker { display: none; }
   font-size: 24px; line-height: 1; font-weight: 700; display: grid; place-items: center; box-shadow: 3px 3px 0 var(--ink); cursor: pointer; transition: transform .1s ease, box-shadow .1s ease; }
 .close-x:hover { background: var(--accent-2); color: var(--drawer-text); }
 .close-x:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+/* Source pill on a grid card: opens the original post without opening the item. */
+.src-pill { position: absolute; top: 8px; right: 8px; z-index: 5; padding: 2px 8px; border: 1.5px solid var(--ink); border-radius: 999px; background: var(--card); color: var(--fg);
+  font-size: 11px; font-weight: 600; line-height: 1.4; box-shadow: 1.5px 1.5px 0 var(--ink); }
+.src-pill.low { top: auto; bottom: 10px; }
+.src-pill:hover { background: var(--accent-2); color: var(--drawer-text); }

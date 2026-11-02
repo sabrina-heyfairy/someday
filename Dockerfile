@@ -29,6 +29,7 @@ RUN mkdir -p /data/media
 EXPOSE 3000
 # Serve FIRST: Fly's proxy gives up ~8s after waking a stopped machine, and the chores below took 15s before Next listened,
 # so every Shortcut save that hit a sleeping machine failed. Migrations, the sewing-tips upsert, shelving, the source
-# scheduler and (a minute later) one low-priority preview worker now run behind the server. Migrations are idempotent and
+# scheduler and (a minute later) one low-priority preview worker now run behind the server, starting 20s in so Next has
+# the single CPU to itself while it boots. Migrations are idempotent and
 # the schema only changes on a deploy, so the few seconds of overlap are safe.
-CMD ["sh", "-c", "(npx tsx scripts/migrate.ts && npx tsx scripts/import-sewing-tips.ts && npx tsx scripts/shelve.ts && (npx tsx scripts/scheduler.ts &) && sleep 60 && PREVIEW_CONCURRENCY=1 nice -n 15 npx tsx scripts/backfill-previews.ts) & exec npx next start -p ${PORT}"]
+CMD ["sh", "-c", "(sleep 20 && npx tsx scripts/migrate.ts && npx tsx scripts/import-sewing-tips.ts && npx tsx scripts/shelve.ts && (npx tsx scripts/scheduler.ts &) && sleep 40 && PREVIEW_CONCURRENCY=1 nice -n 15 npx tsx scripts/backfill-previews.ts) & exec node_modules/.bin/next start -p ${PORT}"]
